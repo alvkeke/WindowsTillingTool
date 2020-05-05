@@ -2,6 +2,7 @@
 #include <iostream>
 #include <Windows.h>
 #include <dwmapi.h>
+#include "MonitorManager.h"
 
 using namespace std;
 
@@ -27,24 +28,36 @@ public:
 	void getClassName(char* buf, int n_buf);
 
 private:
-	int mMonitorIndex;
 	HWND mHwnd;
+};
+
+class WindowListHead {
+public :
+	WindowListHead(int iscreen);
+	~WindowListHead();
+
+	WindowListHead* nextScreen;
+	WindowNode* mWindowList;
+	WindowNode* mWindowTail;
+	int MonitorIndex;
 };
 
 class WindowManager {
 public:
 	WindowManager();
+
 	void refreshWindowList();
-	int getWindowCount();
-	HWND getWindow(int index);
+	int getAllWindowCount();
+	WindowNode* getWindowNode(int screen, int index);
+	HWND getWindow(int screen, int index);
 	void addWindowNode(HWND hwnd);
 	void clearWindows();
 
 	void printWindowList();
-
+	MonitorManager* getMonitormanager();
 private:
-	WindowNode* mWindowList;
-	WindowNode* mWindowTail;
+	MonitorManager* mMonitors;
+	WindowListHead* mAllWindows;
 
 	static BOOL CALLBACK EnumWndProc(HWND hwnd, LPARAM lparam);
 };

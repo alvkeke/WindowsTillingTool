@@ -82,75 +82,137 @@ void WindowNode::getClassName(char* buf, int n_buf)
 
 WindowManager::WindowManager()
 {
-	mWindowList = NULL;
-	mWindowTail = NULL;
+	WindowListHead* itr;
+	this->mMonitors = new MonitorManager();
+	mAllWindows = new WindowListHead(0);
+	itr = mAllWindows;
+
+	for (int i = 1; i < mMonitors->getMonitorCount(); i++)
+	{
+		itr->nextScreen = new WindowListHead(i);
+		itr = itr->nextScreen;
+	}
 	EnumWindows(EnumWndProc, (LPARAM)this);
 }
 
 void WindowManager::refreshWindowList()
 {
-	if (mWindowList) delete mWindowList;
-	mWindowList = NULL;
-	mWindowTail = NULL;
-	EnumWindows(EnumWndProc, (LPARAM)this);
+	WindowListHead* itr;
+	if (mAllWindows) delete mAllWindows;
+	mMonitors->refreshMonitors();
 
+	mAllWindows = new WindowListHead(0);
+	itr = mAllWindows;
+	
+	for (int i = 1; i < mMonitors->getMonitorCount(); i++)
+	{
+		itr->nextScreen = new WindowListHead(i);
+		itr = itr->nextScreen;
+	}
+	EnumWindows(EnumWndProc, (LPARAM)this);
 }
 
-int WindowManager::getWindowCount()
+int WindowManager::getAllWindowCount()
 {
 	int i=0;
-	for (WindowNode* itr = mWindowList; itr != NULL; itr = itr->mNext)
+	for (WindowListHead* itr1 = mAllWindows; itr1 != NULL; itr1 = itr1->nextScreen)
 	{
-		i++;
+		for (WindowNode* itr = itr1->mWindowList; itr != NULL; itr = itr->mNext)
+		{
+			i++;
+		}
 	}
 	return i;
 }
 
-HWND WindowManager::getWindow(int index)
+WindowNode* WindowManager::getWindowNode(int screen, int index)
 {
-	WindowNode* itr = mWindowList;
-	for (; index > 0; index--)
+	WindowListHead* itr = mAllWindows;
+	WindowNode* itr1;
+	for (; screen > 0; screen--)
 	{
 		if (itr == NULL) return NULL;
-		itr = itr->mNext;
+		itr = itr->nextScreen;
+	}
+	itr1 = itr->mWindowList;
+	for (; index > 0; index--)
+	{
+		if (itr1 == NULL) return NULL;
+		itr1 = itr1->mNext;
 	}
 
-	return itr->getHwnd();
+	return itr1;
+}
+
+HWND WindowManager::getWindow(int screen, int index)
+{
+	WindowListHead* itr = mAllWindows;
+	WindowNode* itr1;
+	for (; screen > 0; screen--)
+	{
+		if (itr == NULL) return NULL;
+		itr = itr->nextScreen;
+	}
+	itr1 = itr->mWindowList;
+	for (; index > 0; index--)
+	{
+		if (itr1 == NULL) return NULL;
+		itr1 = itr1->mNext;
+	}
+
+	return itr1->getHwnd();
 }
 void WindowManager::addWindowNode(HWND hwnd)
 {
-	if (mWindowList == NULL)
+	WindowListHead* itr;
+
+	int index = mMonitors->monitorFromWindow(hwnd);
+	itr = mAllWindows;
+	for (; index > 0; index--)
 	{
-		mWindowList = new WindowNode(hwnd);
-		mWindowTail = mWindowList;
+		if (itr == NULL) return;
+		itr = itr->nextScreen;
+	}
+
+	if (itr->mWindowList == NULL)
+	{
+		itr->mWindowList = new WindowNode(hwnd);
+		itr->mWindowTail = itr->mWindowList;
 	}
 	else
 	{
-		mWindowTail->mNext = new WindowNode(hwnd);
-		mWindowTail = mWindowTail->mNext;
+		itr->mWindowTail->mNext = new WindowNode(hwnd);
+		itr->mWindowTail = itr->mWindowTail->mNext;
 	}
 }
 
 void WindowManager::clearWindows()
 {
-	delete mWindowList;
-	mWindowList = NULL;
-	mWindowTail = NULL;
+	delete mAllWindows;
+	mAllWindows = NULL;
 }
 
 void WindowManager::printWindowList()
 {
 	POINT p;
 	char buf[IGNORE_WND_CLASS_MAX_LEN];
-	for (WindowNode* itr = mWindowList; itr != NULL; itr = itr->mNext)
+	for (WindowListHead* itr1 = mAllWindows; itr1 != NULL; itr1 = itr1->nextScreen)
 	{
-		itr->getPos(&p);
-		itr->getText(buf, IGNORE_WND_CLASS_MAX_LEN);
-		cout << p.x << ", " << p.y << "\t\t" ;
-		cout << " : " << buf << " : ";
-		itr->getClassName(buf, IGNORE_WND_CLASS_MAX_LEN);
-		cout << buf << endl;
+		for (WindowNode* itr = itr1->mWindowList; itr != NULL; itr = itr->mNext)
+		{
+			itr->getPos(&p);
+			itr->getText(buf, IGNORE_WND_CLASS_MAX_LEN);
+			cout << p.x << ", " << p.y << "\t\t";
+			cout << " : " << buf << " : ";
+			itr->getClassName(buf, IGNORE_WND_CLASS_MAX_LEN);
+			cout << buf << endl;
+		}
 	}
+}
+
+MonitorManager* WindowManager::getMonitormanager()
+{
+	return mMonitors;
 }
 
 BOOL WindowManager::EnumWndProc(HWND hwnd, LPARAM lparam)
@@ -192,4 +254,25 @@ BOOL WindowManager::EnumWndProc(HWND hwnd, LPARAM lparam)
 	}
 
 	return true;
+}
+
+WindowListHead::WindowListHead(int iscreen)
+{
+	MonitorIndex = iscreen;
+	nextScreen = NULL;
+	mWindowList = NULL;
+	mWindowTail = NULL;
+}
+
+WindowListHead::~WindowListHead()
+{
+	if (this->mWindowList)
+	{
+		delete mWindowList;
+	}
+	if (this->nextScreen)
+	{
+		if(nextScreen->nextScreen)
+			delete nextScreen->nextScreen;
+	}
 }
