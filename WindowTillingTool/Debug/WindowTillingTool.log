@@ -1,2 +1,3 @@
 ﻿  main.cpp
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\main.cpp(114,23): warning C4477: “snprintf”: 格式字符串“%d”需要类型“int”的参数，但可变参数 1 拥有了类型“HWND”
   WindowTillingTool.vcxproj -> C:\workspace\VS\WindowTillingTool\Debug\WindowTillingTool.exe

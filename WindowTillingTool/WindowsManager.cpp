@@ -65,11 +65,6 @@ void WindowNode::setRect(LPRECT rect)
 	MoveWindow(mHwnd, rect->left, rect->top, rect->right - rect->left, rect->bottom - rect->top, true);
 }
 
-HWND WindowNode::getHwnd()
-{
-	return mHwnd;
-}
-
 void WindowNode::getText(char* buf, int n_buf)
 {
 	GetWindowTextA(this->mHwnd, buf, n_buf);
@@ -160,7 +155,19 @@ HWND WindowManager::getWindow(int screen, int index)
 		itr1 = itr1->mNext;
 	}
 
-	return itr1->getHwnd();
+	return itr1->getHandle();
+}
+WindowNode* WindowManager::getWindowList(int screen)
+{
+	WindowListHead* itr = mAllWindows;
+
+	for (; screen > 0; screen--)
+	{
+		if (itr == NULL) return NULL;
+		itr = itr->nextScreen;
+	}
+
+	return itr->mWindowList;
 }
 void WindowManager::addWindowNode(HWND hwnd)
 {

@@ -17,12 +17,12 @@ WindowManager* windows;
 
 LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-	char buf[50];
 
 	switch (msg)
 	{
 	case WM_CREATE:
-
+	{
+		char buf[50];
 		initCompoents(hWnd);
 		ReadjustWindow(hWnd, 560, 470);
 
@@ -33,10 +33,97 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		{
 			MonitorNode* m = monitors->getMonitor(i);
 			snprintf(buf,50,  "%d [%d x %d]\0", i, m->getRight()-m->getLeft(), m->getBottom()-m->getTop());
-			SendMessage(hCBMonitors, CB_ADDSTRING, NULL, (LPARAM)buf);
+			cbAddItem(hCBMonitors, buf);
+			if (i == 0)
+			{
+				// SendMessage(hCBMonitors, CB_SELECTSTRING, 0, (WPARAM)buf);
+			}
 		}
+	}
 
-		windows->printWindowList();
+		break;
+	case WM_COMMAND:
+	{
+		int id = LOWORD(wparam);
+		if (id == ID_CB_MONITOR)
+		{
+			if (HIWORD(wparam) == CBN_SELCHANGE)
+			{
+				lbClearList(hLBWindows);
+				char buf[50];
+					
+				GetWindowText(hCBMonitors, buf, 50);
+				for (int i = 0; i < 50; i++)
+				{
+					if (buf[i] == '[')
+					{
+						buf[i] = 0x00;
+						break;
+					}
+				}
+
+				int monitorindex = atoi(buf);
+				WindowNode* windowlist = windows->getWindowList(monitorindex);
+
+				for (WindowNode* itr = windowlist; itr != NULL; itr = itr->mNext)
+				{
+					itr->getText(buf, 50);
+					lbAddItem(hLBWindows, buf);
+				}
+			}
+		}
+		else if (id == ID_LB_WINDOWS)
+		{
+
+			if (HIWORD(wparam) == LBN_SELCHANGE)
+			{
+				char buf[50];
+				int monitorindex;
+				int listmax;
+				int winindex;
+
+				GetWindowText(hCBMonitors, buf, 50);
+				for (int i = 0; i < 50; i++)
+				{
+					if (buf[i] == '[')
+					{
+						buf[i] = 0x00;
+						break;
+					}
+				}
+
+				monitorindex = atoi(buf);
+				
+				listmax = SendMessage(hLBWindows, LB_GETCOUNT, NULL, NULL);
+				if (listmax == LB_ERR) break;
+				
+				for (winindex = 0; winindex < listmax; winindex++)
+				{
+					int res = SendMessage(hLBWindows, LB_GETSEL, (WPARAM)winindex, NULL);
+					if (res) 
+					{
+						break;
+					}
+				}
+
+				WindowNode* win = windows->getWindowNode(monitorindex, winindex);
+				win->getClassName(buf, 50);
+				SetWindowText(hETClass, buf);
+				win->getText(buf, 50);
+				SetWindowText(hETText, buf);
+				snprintf(buf, 50, "%d", win->getHandle());
+				SetWindowText(hETHwnd, buf);
+				POINT p;
+				win->getPos(&p);
+				snprintf(buf, 50, "%d, %d", p.x, p.y);
+				SetWindowText(hETPos, buf);
+				RECT r;
+				win->getRect(&r);
+				snprintf(buf, 50, "%d : %d", r.bottom-r.top, r.right-r.left);
+				SetWindowText(hETSize, buf);
+			}
+		}
+	}
 
 		break;
 	case WM_CLOSE:
@@ -108,7 +195,7 @@ void initCompoents(HWND hParent)
 	hCBMonitors = CreateWindow("combobox", NULL,
 		WS_CHILD | WS_VISIBLE | WS_VSCROLL | CBS_DROPDOWN | CBS_HASSTRINGS | CBS_DROPDOWNLIST,
 		COMPOENT_MARGIN, COMPOENT_MARGIN, WIDTH_MONITORLIST, HEIGTH_MONITORLIST,
-		hParent, NULL, mhInstance, NULL);
+		hParent, (HMENU)ID_CB_MONITOR, mhInstance, NULL);
 
 
 	CreateWindow("static", "´°¿Ú¾ä±ú£¨HWND£©",
@@ -123,14 +210,14 @@ void initCompoents(HWND hParent)
 		WS_CHILD | WS_VISIBLE | WS_BORDER | ES_READONLY,
 		COMPOENT_MARGIN * 2 + WIDTH_WINDOWLIST, editboxy,
 		WIDTH_EDITBOX, HEIGTH_EDITBOX,
-		hParent, NULL, mhInstance, NULL);
+		hParent, (HMENU)ID_EB_HWND, mhInstance, NULL);
 
 
 	hLBWindows = CreateWindow("listbox", NULL,
-		WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL,
+		WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | LBS_NOTIFY,
 		COMPOENT_MARGIN, editboxy,
 		WIDTH_WINDOWLIST, HEIGTH_WINDOWLIST,
-		hParent, NULL, mhInstance, NULL);
+		hParent, (HMENU)ID_LB_WINDOWS, mhInstance, NULL);
 
 	editboxy += COMPOENT_MARGIN + HEIGTH_EDITBOX;
 
@@ -146,7 +233,7 @@ void initCompoents(HWND hParent)
 		WS_CHILD | WS_VISIBLE | WS_BORDER | ES_READONLY,
 		COMPOENT_MARGIN * 2 + WIDTH_WINDOWLIST, editboxy,
 		WIDTH_EDITBOX, HEIGTH_EDITBOX,
-		hParent, NULL, mhInstance, NULL);
+		hParent, (HMENU)ID_EB_TEXT, mhInstance, NULL);
 
 	editboxy += COMPOENT_MARGIN + HEIGTH_EDITBOX;
 
@@ -162,7 +249,7 @@ void initCompoents(HWND hParent)
 		WS_CHILD | WS_VISIBLE | WS_BORDER | ES_READONLY,
 		COMPOENT_MARGIN * 2 + WIDTH_WINDOWLIST, editboxy,
 		WIDTH_EDITBOX, HEIGTH_EDITBOX,
-		hParent, NULL, mhInstance, NULL);
+		hParent, (HMENU)ID_EB_CLASS, mhInstance, NULL);
 
 	editboxy += COMPOENT_MARGIN + HEIGTH_EDITBOX;
 
@@ -178,7 +265,7 @@ void initCompoents(HWND hParent)
 		WS_CHILD | WS_VISIBLE | WS_BORDER | ES_READONLY,
 		COMPOENT_MARGIN * 2 + WIDTH_WINDOWLIST, editboxy,
 		WIDTH_EDITBOX, HEIGTH_EDITBOX,
-		hParent, NULL, mhInstance, NULL);
+		hParent, (HMENU)ID_EB_POS, mhInstance, NULL);
 
 	editboxy += COMPOENT_MARGIN + HEIGTH_EDITBOX;
 
@@ -194,7 +281,7 @@ void initCompoents(HWND hParent)
 		WS_CHILD | WS_VISIBLE | WS_BORDER | ES_READONLY,
 		COMPOENT_MARGIN * 2 + WIDTH_WINDOWLIST, editboxy,
 		WIDTH_EDITBOX, HEIGTH_EDITBOX,
-		hParent, NULL, mhInstance, NULL);
+		hParent, (HMENU)ID_EB_SIZE, mhInstance, NULL);
 }
 
 void ReadjustWindow(HWND hWnd, int nWidth, int nHeight)
@@ -215,6 +302,26 @@ void ReadjustWindow(HWND hWnd, int nWidth, int nHeight)
 	ty = (ty - nHeight - ptDiff.y) / 2;
 
 	MoveWindow(hWnd, tx, ty, nWidth + ptDiff.x, nHeight + ptDiff.y, TRUE);
+}
+
+void lbAddItem(HWND hwnd, char* str)
+{
+	SendMessage(hwnd, LB_ADDSTRING, NULL, (LPARAM)str);
+}
+
+void lbClearList(HWND hwnd)
+{
+	SendMessage(hwnd, LB_RESETCONTENT, NULL, NULL);
+}
+
+void cbAddItem(HWND hwnd, char* str)
+{
+	SendMessage(hwnd, CB_ADDSTRING, NULL, (LPARAM)str);
+}
+
+void cbClearList(HWND hwnd)
+{
+	SendMessage(hwnd, CB_RESETCONTENT, NULL, NULL);
 }
 
 //int main()

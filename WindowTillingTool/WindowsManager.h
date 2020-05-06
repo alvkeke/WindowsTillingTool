@@ -23,7 +23,6 @@ public:
 	void setSize(int w, int h);
 	void setRect(LPRECT rect);
 
-	HWND getHwnd();
 	void getText(char* buf, int n_buf);
 	void getClassName(char* buf, int n_buf);
 
@@ -50,6 +49,7 @@ public:
 	int getAllWindowCount();
 	WindowNode* getWindowNode(int screen, int index);
 	HWND getWindow(int screen, int index);
+	WindowNode* getWindowList(int screen);
 	void addWindowNode(HWND hwnd);
 	void clearWindows();
 
