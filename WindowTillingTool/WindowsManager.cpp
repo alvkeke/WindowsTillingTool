@@ -2,42 +2,44 @@
 #include <iostream>
 using namespace std;
 
-char unneedwind[][IGNORE_WND_CLASS_MAX_LEN] = {
+char filter_full[][IGNORE_WND_CLASS_MAX_LEN] = {
 	// "ApplicationFrameWindow",	// 此类名为UWP应用的类名, 不能通过类名过滤
-	"DummyDWMListenerWindow",
-	"EdgeUiInputTopWndClass",
-	"Windows.UI.Core.CoreWindow",
-	"Progman",		// 
-	"Shell_TrayWnd",
-	"Internet Explorer_Hidden",
-	"ThumbnailDeviceHelperWnd",
-	"WorkerW",
-	"MultitaskingViewFrame"
+	"dummydwmlistenerwindow",
+	"edgeuiinputtopwndclass",
+	"windows.ui.core.corewindow",
+	"progman",		// 
+	"shell_traywnd",
+	"internet explorer_hidden",
+	"thumbnaildevicehelperwnd",
+	"workerw",
+	"multitaskingviewframe",
+	"sysshadow",
+	"shell_cortanaproxy",
+	"tooltips_class32",
+	"tasklistoverlaywnd",
+	"tasklistthumbnailwnd",
+	"listbox",
 	""
 };
 
+char filter_part[][IGNORE_WND_CLASS_MAX_LEN] = {
+	//"HwndWrapper",
+	"#32768",
+	"#32770"
+};
 
-WindowNode::WindowNode(HWND hwnd)
+
+CWindow::CWindow(HWND hwnd)
 {
 	this->mHwnd = hwnd;
-	this->mNext = NULL;
-	
 }
 
-WindowNode::~WindowNode()
-{
-	if (this->mNext)
-	{
-		delete this->mNext;
-	}
-}
-
-HWND WindowNode::getHandle()
+HWND CWindow::getHandle()
 {
 	return this->mHwnd;
 }
 
-void WindowNode::getPos(LPPOINT p)
+void CWindow::getPos(LPPOINT p)
 {
 	RECT r;
 	GetWindowRect(mHwnd, &r);
@@ -45,197 +47,161 @@ void WindowNode::getPos(LPPOINT p)
 	p->y = r.top;
 }
 
-void WindowNode::setPos(int x, int y)
+void CWindow::setPos(int x, int y)
 {
 	SetWindowPos(mHwnd, NULL, x, y, 0, 0, SWP_NOSIZE);
 }
 
-void WindowNode::getRect(LPRECT lpRect)
+void CWindow::getRect(LPRECT lpRect)
 {
 	GetWindowRect(mHwnd, lpRect);
 }
 
-void WindowNode::setSize(int w, int h)
+void CWindow::setSize(int w, int h)
 {
 	SetWindowPos(mHwnd, NULL, 0, 0, w, h, SWP_NOMOVE);
 }
 
-void WindowNode::setRect(LPRECT rect)
+void CWindow::setRect(LPRECT rect)
 {
 	MoveWindow(mHwnd, rect->left, rect->top, rect->right - rect->left, rect->bottom - rect->top, true);
 }
 
-void WindowNode::getText(char* buf, int n_buf)
+void CWindow::getText(char* buf, int n_buf)
 {
 	GetWindowTextA(this->mHwnd, buf, n_buf);
 }
 
-void WindowNode::getClassName(char* buf, int n_buf)
+void CWindow::getClassName(char* buf, int n_buf)
 {
 	RealGetWindowClassA(this->mHwnd, buf, n_buf);
 }
 
-WindowManager::WindowManager()
+boolean CWindow::isNormalShow()
 {
-	WindowListHead* itr;
-	this->mMonitors = new MonitorManager();
-	mAllWindows = new WindowListHead(0);
-	itr = mAllWindows;
-
-	for (int i = 1; i < mMonitors->getMonitorCount(); i++)
+	if (IsWindowVisible(mHwnd) && !IsIconic(mHwnd))
 	{
-		itr->nextScreen = new WindowListHead(i);
-		itr = itr->nextScreen;
+		return true;
 	}
-	EnumWindows(EnumWndProc, (LPARAM)this);
+	return false;
 }
 
-void WindowManager::refreshWindowList()
-{
-	WindowListHead* itr;
-	if (mAllWindows) delete mAllWindows;
-	mMonitors->refreshMonitors();
 
-	mAllWindows = new WindowListHead(0);
-	itr = mAllWindows;
+
+WindowsManager::WindowsManager()
+{
+
+	mAllWindows.clear();
+	EnumDesktopWindows(NULL, EnumWndProc, (LPARAM)this);
+}
+
+void WindowsManager::refreshWindowList()
+{
+
+	if (!mAllWindows.empty()) mAllWindows.clear();
+	EnumDesktopWindows(NULL, EnumWndProc, (LPARAM)this);
+}
+
+int WindowsManager::getAllWindowCount()
+{
+
+	return mAllWindows.size();
+}
+
+
+int WindowsManager::getAllShowWindowCount()
+{
+	int i = 0;
+	list<CWindow>::iterator itr;
 	
-	for (int i = 1; i < mMonitors->getMonitorCount(); i++)
+	for (itr = mAllWindows.begin(); itr != mAllWindows.end(); itr++)
 	{
-		itr->nextScreen = new WindowListHead(i);
-		itr = itr->nextScreen;
-	}
-	EnumWindows(EnumWndProc, (LPARAM)this);
-}
-
-int WindowManager::getAllWindowCount()
-{
-	int i=0;
-	for (WindowListHead* itr1 = mAllWindows; itr1 != NULL; itr1 = itr1->nextScreen)
-	{
-		for (WindowNode* itr = itr1->mWindowList; itr != NULL; itr = itr->mNext)
+		if (itr->isNormalShow())
 		{
 			i++;
 		}
 	}
+
 	return i;
 }
 
-WindowNode* WindowManager::getWindowNode(int screen, int index)
+CWindow* WindowsManager::getWindow(int index)
 {
-	WindowListHead* itr = mAllWindows;
-	WindowNode* itr1;
-	for (; screen > 0; screen--)
-	{
-		if (itr == NULL) return NULL;
-		itr = itr->nextScreen;
-	}
-	itr1 = itr->mWindowList;
-	for (; index > 0; index--)
-	{
-		if (itr1 == NULL) return NULL;
-		itr1 = itr1->mNext;
-	}
+	list<CWindow>::iterator itr = mAllWindows.begin();
 
-	return itr1;
+	if (mAllWindows.size() < index) return nullptr;
+	
+	for (; index > 0; index--)itr++;
+	
+	return &(*itr);
 }
 
-HWND WindowManager::getWindow(int screen, int index)
+HWND WindowsManager::getHwnd(int index)
 {
-	WindowListHead* itr = mAllWindows;
-	WindowNode* itr1;
-	for (; screen > 0; screen--)
-	{
-		if (itr == NULL) return NULL;
-		itr = itr->nextScreen;
-	}
-	itr1 = itr->mWindowList;
-	for (; index > 0; index--)
-	{
-		if (itr1 == NULL) return NULL;
-		itr1 = itr1->mNext;
-	}
-
-	return itr1->getHandle();
-}
-WindowNode* WindowManager::getWindowList(int screen)
-{
-	WindowListHead* itr = mAllWindows;
-
-	for (; screen > 0; screen--)
-	{
-		if (itr == NULL) return NULL;
-		itr = itr->nextScreen;
-	}
-
-	return itr->mWindowList;
-}
-void WindowManager::addWindowNode(HWND hwnd)
-{
-	WindowListHead* itr;
-
-	int index = mMonitors->monitorFromWindow(hwnd);
-	itr = mAllWindows;
-	for (; index > 0; index--)
-	{
-		if (itr == NULL) return;
-		itr = itr->nextScreen;
-	}
-
-	if (itr->mWindowList == NULL)
-	{
-		itr->mWindowList = new WindowNode(hwnd);
-		itr->mWindowTail = itr->mWindowList;
-	}
-	else
-	{
-		itr->mWindowTail->mNext = new WindowNode(hwnd);
-		itr->mWindowTail = itr->mWindowTail->mNext;
-	}
+	return getWindow(index)->getHandle();
 }
 
-void WindowManager::clearWindows()
+list<CWindow>* WindowsManager::getWindowList()
 {
-	delete mAllWindows;
-	mAllWindows = NULL;
+	return &mAllWindows;
 }
 
-void WindowManager::printWindowList()
+list<CWindow>::iterator WindowsManager::getItrBegin()
 {
-	POINT p;
+	return mAllWindows.begin();
+}
+
+bool WindowsManager::isItrEnd(list<CWindow>::iterator itr)
+{
+	return itr==mAllWindows.end();
+}
+
+void WindowsManager::addWindowNode(HWND hwnd)
+{
+	mAllWindows.push_back(*new CWindow(hwnd));
+}
+
+void WindowsManager::clearWindows()
+{
+	mAllWindows.clear();
+}
+
+void WindowsManager::printWindowList()
+{
+
 	char buf[IGNORE_WND_CLASS_MAX_LEN];
-	for (WindowListHead* itr1 = mAllWindows; itr1 != NULL; itr1 = itr1->nextScreen)
+	POINT p;
+	list<CWindow>::iterator itr;
+	for (itr = mAllWindows.begin(); itr != mAllWindows.end(); itr++)
 	{
-		for (WindowNode* itr = itr1->mWindowList; itr != NULL; itr = itr->mNext)
-		{
-			itr->getPos(&p);
-			itr->getText(buf, IGNORE_WND_CLASS_MAX_LEN);
-			cout << p.x << ", " << p.y << "\t\t";
-			cout << " : " << buf << " : ";
-			itr->getClassName(buf, IGNORE_WND_CLASS_MAX_LEN);
-			cout << buf << endl;
-		}
+		itr->getPos(&p);
+		itr->getText(buf, IGNORE_WND_CLASS_MAX_LEN);
+		cout << p.x << ", " << p.y << "\t\t";
+		cout << " : " << buf << " : ";
+		itr->getClassName(buf, IGNORE_WND_CLASS_MAX_LEN);
+		cout << buf << endl;
 	}
 }
 
-MonitorManager* WindowManager::getMonitormanager()
-{
-	return mMonitors;
-}
-
-BOOL WindowManager::EnumWndProc(HWND hwnd, LPARAM lparam)
+BOOL WindowsManager::EnumWndProc(HWND hwnd, LPARAM lparam)
 {
 	char classbuf[IGNORE_WND_CLASS_MAX_LEN];
 	bool v;
 	RECT r;
 	INT nCloaked;
-	WindowManager* wm = (WindowManager*)lparam;
+	WindowsManager* wm = (WindowsManager*)lparam;
 
 	RealGetWindowClassA(hwnd, classbuf, IGNORE_WND_CLASS_MAX_LEN);
 	v = IsWindowVisible(hwnd);
 
+	for (int i = 0; i < strlen(classbuf); i++)
+	{
+		classbuf[i] = tolower(classbuf[i]);
+	}
+
 	if (v)
 	{
-		if (strcmp(classbuf, "ApplicationFrameWindow") == 0)
+		if (strcmp(classbuf, "applicationframewindow") == 0)
 		{
 			// 判断UWP应用是否真正的显示
 			DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, &nCloaked, sizeof(INT));
@@ -244,9 +210,17 @@ BOOL WindowManager::EnumWndProc(HWND hwnd, LPARAM lparam)
 		}
 		else
 		{
-			for (int i = 0; i < sizeof(unneedwind) / IGNORE_WND_CLASS_MAX_LEN; i++)
+			for (int i = 0; i < sizeof(filter_full) / IGNORE_WND_CLASS_MAX_LEN; i++)
 			{
-				if (strcmp(classbuf, unneedwind[i]) == 0)
+				if (strcmp(classbuf, filter_full[i]) == 0)
+				{
+					v = false;
+					break;
+				}
+			}
+			for (int i = 0; i < sizeof(filter_part) / IGNORE_WND_CLASS_MAX_LEN; i++)
+			{
+				if (strstr(classbuf, filter_part[i]))
 				{
 					v = false;
 					break;
@@ -261,25 +235,4 @@ BOOL WindowManager::EnumWndProc(HWND hwnd, LPARAM lparam)
 	}
 
 	return true;
-}
-
-WindowListHead::WindowListHead(int iscreen)
-{
-	MonitorIndex = iscreen;
-	nextScreen = NULL;
-	mWindowList = NULL;
-	mWindowTail = NULL;
-}
-
-WindowListHead::~WindowListHead()
-{
-	if (this->mWindowList)
-	{
-		delete mWindowList;
-	}
-	if (this->nextScreen)
-	{
-		if(nextScreen->nextScreen)
-			delete nextScreen->nextScreen;
-	}
 }

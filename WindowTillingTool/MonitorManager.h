@@ -1,11 +1,13 @@
 #pragma once
 #include <Windows.h>
+#include <list>
 
-class MonitorNode {
+using namespace std;
+
+class CMonitor {
 public:
-	MonitorNode* mNext;
 
-	MonitorNode(int primaryflag, int top, int left, int bottom, int right)
+	CMonitor(int primaryflag, int top, int left, int bottom, int right)
 	{
 		this->miBottom = bottom;
 		this->miLeft = left;
@@ -13,15 +15,6 @@ public:
 		this->miTop = top;			
 		mbPrimary = primaryflag == 1 ? true : false;
 
-		this->mNext = NULL;
-	}
-
-	~MonitorNode()
-	{
-		if (this->mNext)
-		{
-			delete this->mNext;
-		}
 	}
 
 	int getTop() { return miTop; }
@@ -42,14 +35,18 @@ class MonitorManager
 {
 public:
 	MonitorManager();
+
 	void refreshMonitors();
 	int getMonitorCount();
-	MonitorNode* getMonitor(int index);
+	CMonitor* getMonitor(int index);
 	void addMonitorNode(int primaryflag, int top, int left, int bottom, int right);
 	void clearMonitors();
 
 	int getWidth(int index);
 	int getHeight(int index);
+
+	int getClientWidth(int index);
+	int getClientHeight(int index);
 
 	int monitorFromPoint(int x, int y);
 	int monitorFromWindow(HWND hwnd);
@@ -61,8 +58,9 @@ public:
 
 private:
 
-	MonitorNode* mMonitorList;
-	MonitorNode* mMonitorTail;
+	list<CMonitor> mMonitors;
+	//MonitorNode* mMonitorList;
+	//MonitorNode* mMonitorTail;
 
 	static BOOL CALLBACK EnumMonitorCallback(HMONITOR handle, HDC hdc, LPRECT rect, LPARAM param);
 

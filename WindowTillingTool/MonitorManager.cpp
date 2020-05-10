@@ -17,77 +17,76 @@ BOOL CALLBACK MonitorManager :: EnumMonitorCallback(HMONITOR handle, HDC hdc, LP
 MonitorManager :: MonitorManager()
 {
 	// 初始化变量
-	mMonitorList = NULL;
-	mMonitorTail = NULL;
+	mMonitors.clear();
 	// 列举显示器, 并将其存放在screenlist中.
 	EnumDisplayMonitors(NULL, NULL, EnumMonitorCallback, (LPARAM)this);
 }
 
 void MonitorManager::refreshMonitors()
 {
-	if (mMonitorList) delete mMonitorList;
-	mMonitorList = NULL;
-	mMonitorTail = NULL;
+
+	if (!mMonitors.empty()) mMonitors.clear();
 	EnumDisplayMonitors(NULL, NULL, EnumMonitorCallback, (LPARAM)this);
 }
 
 int MonitorManager::getMonitorCount()
 {
-	int n = 0;
-	for (MonitorNode* itr = mMonitorList; itr != NULL; itr = itr->mNext)
-		n++;
-	return n;
+	return mMonitors.size();
 }
 
-MonitorNode* MonitorManager::getMonitor(int index)
+CMonitor* MonitorManager::getMonitor(int index)
 {
-	MonitorNode* itr = mMonitorList;
+
+	list<CMonitor>::iterator itr = mMonitors.begin();
+	if (mMonitors.size() < index) return nullptr;
 	for (; index > 0; index--)
 	{
-		if (itr->mNext == NULL) return nullptr;
-		itr = itr->mNext;
+		itr++;
 	}
-	return itr;
+	return &(*itr);
 }
 
 void MonitorManager::addMonitorNode(int primaryflag, int top, int left, int bottom, int right)
 {
-	if (mMonitorList == NULL)
-	{
-		mMonitorList = new MonitorNode(primaryflag, top, left, bottom, right);
-		mMonitorTail = mMonitorList;
-	}
-	else
-	{
-		mMonitorTail->mNext = new MonitorNode(primaryflag, top, left, bottom, right);
-		mMonitorTail = mMonitorTail->mNext;
-	}
+
+	mMonitors.push_back(*new CMonitor(primaryflag, top, left, bottom, right));
 }
 
 void MonitorManager::clearMonitors()
 {
-	delete mMonitorList;
-	mMonitorList = NULL;
-	mMonitorTail = NULL;
+	mMonitors.clear();
 }
 
 int MonitorManager::getWidth(int index)
 {
-	MonitorNode* monitor = getMonitor(index);
+	CMonitor* monitor = getMonitor(index);
 	return monitor->getRight() - monitor->getLeft();
 }
 
 int MonitorManager::getHeight(int index)
 {
-	MonitorNode* monitor = getMonitor(index);
+	CMonitor* monitor = getMonitor(index);
+	return monitor->getBottom() - monitor->getTop();
+}
+
+int MonitorManager::getClientWidth(int index)
+{
+	CMonitor* monitor = getMonitor(index);
+	return monitor->getRight() - monitor->getLeft();
+}
+
+int MonitorManager::getClientHeight(int index)
+{
+	CMonitor* monitor = getMonitor(index);
 	return monitor->getBottom() - monitor->getTop();
 }
 
 int MonitorManager::monitorFromPoint(int x, int y)
 {
-	int i = 0;
 
-	for (MonitorNode* itr = mMonitorList; itr != NULL; itr = itr->mNext)
+	list<CMonitor>::iterator itr;
+	int i = 0;
+	for (itr = mMonitors.begin(); itr != mMonitors.end(); itr++)
 	{
 		if (itr->getLeft() <= x && itr->getRight() > x &&
 			itr->getTop() <= y && itr->getBottom() > y)
@@ -101,6 +100,7 @@ int MonitorManager::monitorFromPoint(int x, int y)
 
 int MonitorManager::monitorFromWindow(HWND hwnd)
 {
+	list<CMonitor>::iterator itr;
 	int i = 0;
 	RECT r;
 	GetWindowRect(hwnd, &r);
@@ -113,7 +113,7 @@ int MonitorManager::monitorFromWindow(HWND hwnd)
 		r.top += 7;
 	}
 
-	for (MonitorNode* itr = mMonitorList; itr != NULL; itr = itr->mNext)
+	for(itr = mMonitors.begin(); itr!=mMonitors.end(); itr++)
 	{
 		if (itr->getLeft() <= r.left && itr->getRight() > r.left &&
 			itr->getTop() <= r.top && itr->getBottom() > r.top)
@@ -129,9 +129,10 @@ int MonitorManager::monitorFromWindow(HWND hwnd)
 int MonitorManager::getUpMonitor(int index)
 {
 	int i = 0;
-	MonitorNode * m = getMonitor(index);
+	list<CMonitor>::iterator itr;
+	CMonitor* m = getMonitor(index);
 
-	for (MonitorNode* itr = mMonitorList; itr != NULL; itr = itr->mNext)
+	for (itr = mMonitors.begin(); itr != mMonitors.end(); itr++)
 	{
 		if (m->getTop() == itr->getBottom())
 		{
@@ -146,9 +147,10 @@ int MonitorManager::getUpMonitor(int index)
 int MonitorManager::getLeftMonitor(int index)
 {
 	int i = 0;
-	MonitorNode* m = getMonitor(index);
+	list<CMonitor>::iterator itr;
+	CMonitor* m = getMonitor(index);
 
-	for (MonitorNode* itr = mMonitorList; itr != NULL; itr = itr->mNext)
+	for (itr = mMonitors.begin(); itr != mMonitors.end(); itr++)
 	{
 		if (m->getLeft() == itr->getRight())
 		{
@@ -163,9 +165,10 @@ int MonitorManager::getLeftMonitor(int index)
 int MonitorManager::getRightMonitor(int index)
 {
 	int i = 0;
-	MonitorNode* m = getMonitor(index);
+	list<CMonitor>::iterator itr;
+	CMonitor* m = getMonitor(index);
 
-	for (MonitorNode* itr = mMonitorList; itr != NULL; itr = itr->mNext)
+	for (itr = mMonitors.begin(); itr != mMonitors.end(); itr++)
 	{
 		if (m->getRight() == itr->getLeft())
 		{
@@ -180,9 +183,10 @@ int MonitorManager::getRightMonitor(int index)
 int MonitorManager::getDownMonitor(int index)
 {
 	int i = 0;
-	MonitorNode* m = getMonitor(index);
+	list<CMonitor>::iterator itr;
+	CMonitor* m = getMonitor(index);
 
-	for (MonitorNode* itr = mMonitorList; itr != NULL; itr = itr->mNext)
+	for (itr = mMonitors.begin(); itr != mMonitors.end(); itr++)
 	{
 		if (m->getBottom() == itr->getTop())
 		{

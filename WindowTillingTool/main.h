@@ -7,6 +7,11 @@
 using namespace std;
 
 #define MAINWND_CLASS_NAME "WinTool_Main"
+
+#define BUFFER_SIZE 100
+
+#define TIMER_INTERVAL_MS 100
+
 #define COMPOENT_MARGIN 20
 
 #define HEIGTH_MONITORLIST 500
@@ -18,30 +23,6 @@ using namespace std;
 #define HEIGTH_EDITBOX 25
 #define WIDTH_EDITBOX 300
 
-
-// #define _CRT_SECURE_NO_WARNINGS
-
-void initCompoents(HWND hParent);
-void ReadjustWindow(HWND hWnd, int nWidth, int nHeight);
-
-void lbAddItem(HWND hwnd, char* str);
-void lbClearList(HWND hwnd);
-void cbAddItem(HWND hwnd, char* str);
-void cbClearList(HWND hwnd);
-
-
-
-/*
-
-HWND hCBMonitors;
-HWND hLBWindows;
-HWND hETText;
-HWND hETClass;
-HWND hETHwnd;
-HWND hETPos;
-HWND hETSize;
-*/
-
 #define ID_CB_MONITOR	1001
 #define ID_LB_WINDOWS	2001
 #define ID_EB_TEXT		3001
@@ -49,4 +30,20 @@ HWND hETSize;
 #define ID_EB_HWND		3003
 #define ID_EB_POS		3004
 #define ID_EB_SIZE		3005
+
+#define WINDOW_MARGIN 30
+
+void initCompoents(HWND hParent);
+void ReadjustMainWindow(HWND hWnd, int nWidth, int nHeight);
+
+void updateWindowInfo();
+void updateWindowsList();
+
+void AdjustWindows();
+
+void lbAddItem(HWND hwnd, char* str);
+void lbClearList(HWND hwnd);
+void cbAddItem(HWND hwnd, char* str);
+void cbClearList(HWND hwnd);
+
 

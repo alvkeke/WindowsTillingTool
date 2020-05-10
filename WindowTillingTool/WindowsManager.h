@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <list>
 #include <Windows.h>
 #include <dwmapi.h>
 #include "MonitorManager.h"
@@ -8,56 +9,66 @@ using namespace std;
 
 #pragma comment(lib, "dwmapi.lib")
 
-#define IGNORE_WND_CLASS_MAX_LEN 30
+#define IGNORE_WND_CLASS_MAX_LEN 100
 
-class WindowNode {
+class CWindow {
 public:
-	WindowNode* mNext;
 
-	WindowNode(HWND hwnd);
-	~WindowNode();
+	CWindow(HWND hwnd);
+
 	HWND getHandle();
 	void getPos(LPPOINT p);
 	void setPos(int x, int y);
-	void getRect(LPRECT rect);
+
 	void setSize(int w, int h);
+
+	void getRect(LPRECT rect);
 	void setRect(LPRECT rect);
 
 	void getText(char* buf, int n_buf);
 	void getClassName(char* buf, int n_buf);
 
+	boolean isNormalShow();
+
 private:
 	HWND mHwnd;
 };
 
-class WindowListHead {
-public :
-	WindowListHead(int iscreen);
-	~WindowListHead();
-
-	WindowListHead* nextScreen;
-	WindowNode* mWindowList;
-	WindowNode* mWindowTail;
-	int MonitorIndex;
-};
-
-class WindowManager {
+class WindowsManager {
 public:
-	WindowManager();
+	WindowsManager();
+
+	// MonitorManager* getMonitormanager();
 
 	void refreshWindowList();
-	int getAllWindowCount();
-	WindowNode* getWindowNode(int screen, int index);
-	HWND getWindow(int screen, int index);
-	WindowNode* getWindowList(int screen);
 	void addWindowNode(HWND hwnd);
 	void clearWindows();
-
 	void printWindowList();
-	MonitorManager* getMonitormanager();
+
+	int getAllWindowCount();
+	// int getWindowCount(int screen);
+	int getAllShowWindowCount();
+	// int getShowWindowCount(int screen);
+
+	/*
+	CWindow* getWindowNode(int screen, int index);
+	HWND getWindow(int screen, int index);
+	CWindow* getWindowList(int screen);
+	*/
+
+	CWindow* getWindow(int index);
+	HWND getHwnd(int index);
+	list<CWindow>* getWindowList();
+	list<CWindow>::iterator getItrBegin();
+	bool isItrEnd(list<CWindow>::iterator);
+
+	//void moveWindow(int screen, int index, int x, int y, int w, int h);
+	
+
 private:
-	MonitorManager* mMonitors;
-	WindowListHead* mAllWindows;
+	// MonitorManager* mMonitors;
+	// WindowListHead* mAllWindows;
+	list<CWindow> mAllWindows;
 
 	static BOOL CALLBACK EnumWndProc(HWND hwnd, LPARAM lparam);
 };
