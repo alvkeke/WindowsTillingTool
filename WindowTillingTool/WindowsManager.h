@@ -38,23 +38,13 @@ class WindowsManager {
 public:
 	WindowsManager();
 
-	// MonitorManager* getMonitormanager();
-
 	void refreshWindowList();
 	void addWindowNode(HWND hwnd);
 	void clearWindows();
 	void printWindowList();
 
 	int getAllWindowCount();
-	// int getWindowCount(int screen);
 	int getAllShowWindowCount();
-	// int getShowWindowCount(int screen);
-
-	/*
-	CWindow* getWindowNode(int screen, int index);
-	HWND getWindow(int screen, int index);
-	CWindow* getWindowList(int screen);
-	*/
 
 	CWindow* getWindow(int index);
 	HWND getHwnd(int index);
@@ -62,12 +52,9 @@ public:
 	list<CWindow>::iterator getItrBegin();
 	bool isItrEnd(list<CWindow>::iterator);
 
-	//void moveWindow(int screen, int index, int x, int y, int w, int h);
-	
+	void clearOutdateWindows();
 
 private:
-	// MonitorManager* mMonitors;
-	// WindowListHead* mAllWindows;
 	list<CWindow> mAllWindows;
 
 	static BOOL CALLBACK EnumWndProc(HWND hwnd, LPARAM lparam);

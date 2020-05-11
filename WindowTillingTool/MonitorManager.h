@@ -7,21 +7,14 @@ using namespace std;
 class CMonitor {
 public:
 
-	CMonitor(int primaryflag, int top, int left, int bottom, int right)
-	{
-		this->miBottom = bottom;
-		this->miLeft = left;
-		this->miRight = right;
-		this->miTop = top;			
-		mbPrimary = primaryflag == 1 ? true : false;
+	CMonitor(int primaryflag, int top, int left, int bottom, int right);
 
-	}
-
-	int getTop() { return miTop; }
-	int getBottom() { return miBottom; }
-	int getLeft() { return miLeft; }
-	int getRight() { return miRight; }
-	bool isPrimary() { return mbPrimary; }
+	int getTop();
+	int getBottom();
+	int getLeft();
+	int getRight();
+	bool isPrimary();
+	float getOverlapRate(HWND hwnd);
 
 private:
 	bool mbPrimary;
@@ -59,8 +52,6 @@ public:
 private:
 
 	list<CMonitor> mMonitors;
-	//MonitorNode* mMonitorList;
-	//MonitorNode* mMonitorTail;
 
 	static BOOL CALLBACK EnumMonitorCallback(HMONITOR handle, HDC hdc, LPRECT rect, LPARAM param);
 

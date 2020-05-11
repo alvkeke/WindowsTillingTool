@@ -19,13 +19,24 @@ char filter_full[][IGNORE_WND_CLASS_MAX_LEN] = {
 	"tasklistoverlaywnd",
 	"tasklistthumbnailwnd",
 	"listbox",
+	"syslink",
+	"sysipaddress32",
+	// "syslistview32",
+	// "systreeview32",
+	// "msctls_progress32",
+	// "static",
+	// "button",
+	// "comboxex32",
+	// "combox",
+	// "toolbarwindow32",
 	""
 };
 
 char filter_part[][IGNORE_WND_CLASS_MAX_LEN] = {
 	//"HwndWrapper",
 	"#32768",
-	"#32770"
+	"#32770",
+	"#32774"
 };
 
 
@@ -87,24 +98,20 @@ boolean CWindow::isNormalShow()
 }
 
 
-
 WindowsManager::WindowsManager()
 {
-
 	mAllWindows.clear();
 	EnumDesktopWindows(NULL, EnumWndProc, (LPARAM)this);
 }
 
 void WindowsManager::refreshWindowList()
 {
-
-	if (!mAllWindows.empty()) mAllWindows.clear();
 	EnumDesktopWindows(NULL, EnumWndProc, (LPARAM)this);
+	clearOutdateWindows();
 }
 
 int WindowsManager::getAllWindowCount()
 {
-
 	return mAllWindows.size();
 }
 
@@ -130,8 +137,8 @@ CWindow* WindowsManager::getWindow(int index)
 	list<CWindow>::iterator itr = mAllWindows.begin();
 
 	if (mAllWindows.size() < index) return nullptr;
-	
-	for (; index > 0; index--)itr++;
+
+	advance(itr, index);
 	
 	return &(*itr);
 }
@@ -156,6 +163,20 @@ bool WindowsManager::isItrEnd(list<CWindow>::iterator itr)
 	return itr==mAllWindows.end();
 }
 
+void WindowsManager::clearOutdateWindows()
+{
+	list<CWindow>::iterator itr;
+
+	for (itr = mAllWindows.begin(); itr != mAllWindows.end(); itr++)
+	{
+		if (!IsWindow(itr->getHandle()))
+		{
+			itr = mAllWindows.erase(itr);
+			itr--;
+		}
+	}
+}
+
 void WindowsManager::addWindowNode(HWND hwnd)
 {
 	mAllWindows.push_back(*new CWindow(hwnd));
@@ -170,13 +191,13 @@ void WindowsManager::printWindowList()
 {
 
 	char buf[IGNORE_WND_CLASS_MAX_LEN];
-	POINT p;
+	RECT r;
 	list<CWindow>::iterator itr;
 	for (itr = mAllWindows.begin(); itr != mAllWindows.end(); itr++)
 	{
-		itr->getPos(&p);
+		itr->getRect(&r);
 		itr->getText(buf, IGNORE_WND_CLASS_MAX_LEN);
-		cout << p.x << ", " << p.y << "\t\t";
+		cout << r.left << "," << r.top << ": " << r.right << "," << r.bottom << "\t\t";
 		cout << " : " << buf << " : ";
 		itr->getClassName(buf, IGNORE_WND_CLASS_MAX_LEN);
 		cout << buf << endl;
@@ -186,53 +207,59 @@ void WindowsManager::printWindowList()
 BOOL WindowsManager::EnumWndProc(HWND hwnd, LPARAM lparam)
 {
 	char classbuf[IGNORE_WND_CLASS_MAX_LEN];
-	bool v;
 	RECT r;
 	INT nCloaked;
-	WindowsManager* wm = (WindowsManager*)lparam;
+	WindowsManager* wm;
+	
+	wm = (WindowsManager*)lparam;
+
+	// 判断窗口是否已经存在与列表中，如果存在则跳过
+	list<CWindow>::iterator itr;
+	for (itr = wm->mAllWindows.begin(); itr != wm->mAllWindows.end(); itr++)
+	{
+		if (itr->getHandle() == hwnd)
+		{
+			return true;
+		}
+	}
 
 	RealGetWindowClassA(hwnd, classbuf, IGNORE_WND_CLASS_MAX_LEN);
-	v = IsWindowVisible(hwnd);
+
+	if (!IsWindowVisible(hwnd)) return true;
 
 	for (int i = 0; i < strlen(classbuf); i++)
 	{
 		classbuf[i] = tolower(classbuf[i]);
 	}
 
-	if (v)
+	if (strcmp(classbuf, "applicationframewindow") == 0)
 	{
-		if (strcmp(classbuf, "applicationframewindow") == 0)
+		// 判断UWP应用是否真正的显示
+		DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, &nCloaked, sizeof(INT));
+		if (nCloaked) return true;
+	}
+	else
+	{
+		for (int i = 0; i < sizeof(filter_full) / IGNORE_WND_CLASS_MAX_LEN; i++)
 		{
-			// 判断UWP应用是否真正的显示
-			DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, &nCloaked, sizeof(INT));
-			// v = !nCloaked;
-			if (nCloaked) v = false;
-		}
-		else
-		{
-			for (int i = 0; i < sizeof(filter_full) / IGNORE_WND_CLASS_MAX_LEN; i++)
+			if (strcmp(classbuf, filter_full[i]) == 0)
 			{
-				if (strcmp(classbuf, filter_full[i]) == 0)
-				{
-					v = false;
-					break;
-				}
+				return true;
 			}
-			for (int i = 0; i < sizeof(filter_part) / IGNORE_WND_CLASS_MAX_LEN; i++)
+		}
+		for (int i = 0; i < sizeof(filter_part) / IGNORE_WND_CLASS_MAX_LEN; i++)
+		{
+			if (strstr(classbuf, filter_part[i]))
 			{
-				if (strstr(classbuf, filter_part[i]))
-				{
-					v = false;
-					break;
-				}
+				return true;
 			}
 		}
 	}
 
-	if (v)
-	{
-		wm->addWindowNode(hwnd);
-	}
-
+	int style = GetWindowLong(hwnd, GWL_STYLE);
+	if (! (style & WS_CAPTION)) return true;
+	
+	wm->addWindowNode(hwnd);
+	
 	return true;
 }

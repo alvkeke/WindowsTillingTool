@@ -1,3 +1,12 @@
-﻿  main.cpp
-C:\workspace\VS\WindowTillingTool\WindowTillingTool\main.cpp(322,29): warning C4477: “snprintf”: 格式字符串“%d”需要类型“int”的参数，但可变参数 1 拥有了类型“HWND”
+﻿  MonitorManager.cpp
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\MonitorManager.cpp(52,48): warning C4244: “=”: 从“int”转换到“float”，可能丢失数据
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\MonitorManager.cpp(53,31): warning C4244: “=”: 从“LONG”转换到“float”，可能丢失数据
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\MonitorManager.cpp(97,23): warning C4018: “<”: 有符号/无符号不匹配
+  WindowsManager.cpp
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\WindowsManager.cpp(139,25): warning C4018: “<”: 有符号/无符号不匹配
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\WindowsManager.cpp(230,20): warning C4018: “<”: 有符号/无符号不匹配
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\WindowsManager.cpp(210,7): warning C4101: “r”: 未引用的局部变量
+  main.cpp
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\main.cpp(321,29): warning C4477: “snprintf”: 格式字符串“%d”需要类型“int”的参数，但可变参数 1 拥有了类型“HWND”
+  正在生成代码...
   WindowTillingTool.vcxproj -> C:\workspace\VS\WindowTillingTool\Debug\WindowTillingTool.exe

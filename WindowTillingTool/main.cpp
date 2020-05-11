@@ -21,13 +21,12 @@ bool isPrinting = false;
 
 DWORD WINAPI timerProc(LPVOID interval)
 {
-	AdjustWindows();
 	while (true)
 	{
 		if (windows)
 		{
 			windows->refreshWindowList();
-			AdjustWindows();
+			// AdjustWindows();
 			// updateWindowsList();
 			// updateWindowInfo();
 			isPrinting = true;	// 线程锁
@@ -76,7 +75,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		break;
 	case WM_RBUTTONUP:
 	{
-		AdjustWindows();
+		// AdjustWindows();
 		// MessageBox(0, "", "", 0);
 	}
 		break;
@@ -392,7 +391,9 @@ void AdjustWindows()
 	{
 		// 获取每个显示器中窗口的个数
 		int n = monitors->monitorFromWindow(itr->getHandle());
-		if (n>=0 && n<n_monitor) n_window[n]++;
+		if (n < 0 || n >= n_monitor) continue;	// 数据与已有数据不符，则跳过
+		// if (n>=0 && n<n_monitor) 
+		n_window[n]++;
 	}
 
 	for (int i = 0; i < n_monitor; i++)
@@ -443,32 +444,48 @@ void cbClearList(HWND hwnd)
 	SendMessage(hwnd, CB_RESETCONTENT, NULL, NULL);
 }
 
+typedef list<CWindow>::iterator CWINITR;
+
+
+// 测试用主函数，正式编译时请将此主函数删除哦，并修改工程属性为窗口
 int main()
 {
 
 	HINSTANCE hinstance = GetModuleHandle(0);
 	WinMain(hinstance, 0, NULL, 0);
 
-	//list<int> a;
-	//list <int> b;
+
+	//list<CWindow> list1;
+	//for (int i = 1; i < 10; i++)
+	//{
+	//	list1.push_back(*new CWindow((HWND)i));
+	//}
+
+	//CWINITR itr;
+	//for (itr = list1.begin(); itr != list1.end(); itr++)
+	//{
+	//	cout << itr->getHandle() << endl;
+	//}
+
+	//for (itr = list1.begin(); itr != list1.end(); itr++)
+	//{
+	//	// cout << itr->getHandle() << endl;
+	//	if (itr->getHandle() == (HWND)5)
+	//	{
+	//		itr = list1.erase(itr);
+	//		// break;
+	//	}
+	//}
+
 	//
-	//for (int i = 0; i < 10; i++)
+	//cout << endl << endl << endl;
+
+	//for (itr = list1.begin(); itr != list1.end(); itr++)
 	//{
-	//	a.push_back(i);
+	//	cout << itr->getHandle() << endl;
 	//}
 
-	//for (list<int>::iterator itr = a.begin(); itr != a.end(); itr++)
-	//{
-	//	b.push_back(*itr);
-	//}
-
-	//b.clear();
-
-	//for (list<int>::iterator itr = a.begin(); itr != a.end(); itr++)
-	//{
-	//	// b.push_back(*itr);
-	//	cout << *itr << endl;
-	//}
 
 	return 0;
 }
+
