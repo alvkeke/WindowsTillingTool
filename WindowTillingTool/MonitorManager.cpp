@@ -1,6 +1,6 @@
 #include "MonitorManager.h"
 
-
+/*
 CMonitor::CMonitor(int primaryflag, int top, int left, int bottom, int right)
 {
 	this->miBottom = bottom;
@@ -9,45 +9,89 @@ CMonitor::CMonitor(int primaryflag, int top, int left, int bottom, int right)
 	this->miTop = top;
 	mbPrimary = primaryflag == 1 ? true : false;
 }
+*/
+CMonitor::CMonitor(HMONITOR hmonitor)
+{
+	//MONITORINFO mi;
 
-int CMonitor::getTop() 
-{ 
-	return miTop; 
+	hMonitor = hmonitor;
+	//mi.cbSize = sizeof(mi);
+	//GetMonitorInfo(hMonitor, &mi);
+
+	//mBottom = mi.rcMonitor.bottom;
+	//mLeft = mi.rcMonitor.left;
+	//mRight = mi.rcMonitor.right;
+	//mTop = mi.rcMonitor.top;
+	//mbPrimary = mi.dwFlags == 1 ? true : false;
 }
-int CMonitor::getBottom() 
-{ 
-	return miBottom; 
+
+HMONITOR CMonitor::getHandle()
+{
+	return hMonitor;
 }
-int CMonitor::getLeft() 
-{ 
-	return miLeft; 
+
+int CMonitor::getClientTop()
+{
+	MONITORINFO mi;
+	getInfo(&mi);
+	return mi.rcWork.top; 
 }
-int CMonitor::getRight() 
+int CMonitor::getClientBottom() 
 { 
-	return miRight; 
+	MONITORINFO mi;
+	getInfo(&mi);
+	return mi.rcWork.bottom;
+}
+int CMonitor::getClientLeft() 
+{ 
+	MONITORINFO mi;
+	getInfo(&mi);
+	return mi.rcWork.left;
+}
+int CMonitor::getClientRight() 
+{ 
+	MONITORINFO mi;
+	getInfo(&mi);
+	return mi.rcWork.right;
 }
 bool CMonitor::isPrimary() 
 { 
-	return mbPrimary; 
+	MONITORINFO mi;
+	getInfo(&mi);
+	return mi.dwFlags == 1;
+}
+
+void CMonitor::getInfo(LPMONITORINFO mi)
+{
+	mi->cbSize = sizeof(MONITORINFO);
+	GetMonitorInfo(this->hMonitor, mi);
 }
 
 float CMonitor::getOverlapRate(HWND hwnd)
 {
 	RECT r;
+	MONITORINFO mi;
 	float overlapsize;
 	float winsize;
 	int ah, aw, h1, h2, h3, w1, w2;
+	int mRight, mLeft, mTop, mBottom;
 
 	GetWindowRect(hwnd, &r);
+	GetMonitorInfo(hMonitor, &mi);
+	mRight = mi.rcMonitor.right;
+	mLeft = mi.rcMonitor.left;
+	mTop = mi.rcMonitor.top;
+	mBottom = mi.rcMonitor.bottom;
 
-	if (r.left >= miRight || r.right < miLeft || r.bottom < miTop || r.top >= miBottom) return 0;
-	ah = max(r.bottom, miBottom) - min(r.top, miTop);
-	aw = max(r.right, miRight) - min(r.left, miLeft);
-	h1 = max(r.top, miTop) - min(r.top, miTop);
-	h2 = max(r.bottom, miBottom) - min(r.bottom, miBottom);
+	if (r.left >= mRight || r.right < mLeft || r.bottom < mTop || r.top >= mBottom) return 0;
+
+	ah = max(r.bottom, mBottom) - min(r.top, mTop);
+	aw = max(r.right, mRight) - min(r.left, mLeft);
+	h1 = max(r.top, mTop) - min(r.top, mTop);
+	h2 = max(r.bottom, mBottom) - min(r.bottom, mBottom);
 	h3 = ah - h1 - h2;
-	w1 = max(r.left, miLeft) - min(r.left, miLeft);
-	w2 = max(r.right, miRight) - min(r.right, miRight);
+	w1 = max(r.left, mLeft) - min(r.left, mLeft);
+	w2 = max(r.right, mRight) - min(r.right, mRight);
 
 	overlapsize = aw * ah - aw*h1 - aw*h2 - w2*h3 - w1*h3;
 	winsize = (r.right - r.left) * (r.bottom - r.top);
@@ -58,14 +102,15 @@ float CMonitor::getOverlapRate(HWND hwnd)
 
 BOOL CALLBACK MonitorManager :: EnumMonitorCallback(HMONITOR handle, HDC hdc, LPRECT rect, LPARAM param)
 {
-	MONITORINFO mi;
+	//MONITORINFO mi;
 	MonitorManager* manager = (MonitorManager*)param;
 
-	mi.cbSize = sizeof(mi);
-	GetMonitorInfo(handle, &mi);
+	//mi.cbSize = sizeof(mi);
+	//GetMonitorInfo(handle, &mi);
 
-	manager->addMonitorNode(mi.dwFlags,
-		mi.rcMonitor.top, mi.rcMonitor.left, mi.rcMonitor.bottom, mi.rcMonitor.right);
+	//manager->addMonitorNode(mi.dwFlags,
+	//	mi.rcMonitor.top, mi.rcMonitor.left, mi.rcMonitor.bottom, mi.rcMonitor.right);
+	manager->addMonitorNode(handle);
 
 	return true;
 }
@@ -102,10 +147,9 @@ CMonitor* MonitorManager::getMonitor(int index)
 	return &(*itr);
 }
 
-void MonitorManager::addMonitorNode(int primaryflag, int top, int left, int bottom, int right)
+void MonitorManager::addMonitorNode(HMONITOR h)
 {
-
-	mMonitors.push_back(*new CMonitor(primaryflag, top, left, bottom, right));
+	mMonitors.push_back(*new CMonitor(h));
 }
 
 void MonitorManager::clearMonitors()
@@ -116,25 +160,31 @@ void MonitorManager::clearMonitors()
 int MonitorManager::getWidth(int index)
 {
 	CMonitor* monitor = getMonitor(index);
-	return monitor->getRight() - monitor->getLeft();
+	return monitor->getClientRight() - monitor->getClientLeft();
 }
 
 int MonitorManager::getHeight(int index)
 {
 	CMonitor* monitor = getMonitor(index);
-	return monitor->getBottom() - monitor->getTop();
+	return monitor->getClientBottom() - monitor->getClientTop();
 }
 
 int MonitorManager::getClientWidth(int index)
 {
+	
+	MONITORINFO mi;
 	CMonitor* monitor = getMonitor(index);
-	return monitor->getRight() - monitor->getLeft();
+	monitor->getInfo(&mi);
+
+	return mi.rcWork.right - mi.rcWork.left;//monitor->getRight() - monitor->getLeft();
 }
 
 int MonitorManager::getClientHeight(int index)
 {
+	MONITORINFO mi;
 	CMonitor* monitor = getMonitor(index);
-	return monitor->getBottom() - monitor->getTop();
+	monitor->getInfo(&mi);
+	return mi.rcWork.bottom - mi.rcWork.top;//monitor->getBottom() - monitor->getTop();
 }
 
 int MonitorManager::monitorFromPoint(int x, int y)
@@ -144,8 +194,8 @@ int MonitorManager::monitorFromPoint(int x, int y)
 	int i = 0;
 	for (itr = mMonitors.begin(); itr != mMonitors.end(); itr++)
 	{
-		if (itr->getLeft() <= x && itr->getRight() > x &&
-			itr->getTop() <= y && itr->getBottom() > y)
+		if (itr->getClientLeft() <= x && itr->getClientRight() > x &&
+			itr->getClientTop() <= y && itr->getClientBottom() > y)
 		{
 			return i;
 		}
@@ -156,6 +206,7 @@ int MonitorManager::monitorFromPoint(int x, int y)
 
 int MonitorManager::monitorFromWindow(HWND hwnd)
 {
+	/*
 	list<CMonitor>::iterator itr;
 	int imonitor = 0;
 	int savemonitor = 0;
@@ -176,7 +227,22 @@ int MonitorManager::monitorFromWindow(HWND hwnd)
 	if (saveoverlaprate == 0) 
 		return -1; //与所有窗口都没有交集
 
-	return savemonitor;
+	*/
+	int index=0;
+	HMONITOR hmonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONULL);
+	if (!hmonitor)return -1;
+
+	list<CMonitor>::iterator itr;
+	for (itr = mMonitors.begin(); itr != mMonitors.end(); itr++)
+	{
+		if (itr->getHandle() == hmonitor)
+		{
+			return index;
+		}
+		index++;
+	}
+
+	return -1;
 }
 
 int MonitorManager::getUpMonitor(int index)
@@ -187,7 +253,7 @@ int MonitorManager::getUpMonitor(int index)
 
 	for (itr = mMonitors.begin(); itr != mMonitors.end(); itr++)
 	{
-		if (m->getTop() == itr->getBottom())
+		if (m->getClientTop() == itr->getClientBottom())
 		{
 			return i;
 		}
@@ -205,7 +271,7 @@ int MonitorManager::getLeftMonitor(int index)
 
 	for (itr = mMonitors.begin(); itr != mMonitors.end(); itr++)
 	{
-		if (m->getLeft() == itr->getRight())
+		if (m->getClientLeft() == itr->getClientRight())
 		{
 			return i;
 		}
@@ -223,7 +289,7 @@ int MonitorManager::getRightMonitor(int index)
 
 	for (itr = mMonitors.begin(); itr != mMonitors.end(); itr++)
 	{
-		if (m->getRight() == itr->getLeft())
+		if (m->getClientRight() == itr->getClientLeft())
 		{
 			return i;
 		}
@@ -241,7 +307,7 @@ int MonitorManager::getDownMonitor(int index)
 
 	for (itr = mMonitors.begin(); itr != mMonitors.end(); itr++)
 	{
-		if (m->getBottom() == itr->getTop())
+		if (m->getClientBottom() == itr->getClientTop())
 		{
 			return i;
 		}

@@ -31,7 +31,8 @@ using namespace std;
 #define ID_EB_POS		3004
 #define ID_EB_SIZE		3005
 
-#define WINDOW_MARGIN 30
+#define WINDOW_MARGIN_X 10
+#define WINDOW_MARGIN_Y 10
 
 void initCompoents(HWND hParent);
 void ReadjustMainWindow(HWND hWnd, int nWidth, int nHeight);

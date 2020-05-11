@@ -26,15 +26,15 @@ DWORD WINAPI timerProc(LPVOID interval)
 		if (windows)
 		{
 			windows->refreshWindowList();
-			// AdjustWindows();
+			AdjustWindows();
 			// updateWindowsList();
 			// updateWindowInfo();
-			isPrinting = true;	// 线程锁
-			windows->printWindowList();
-			isPrinting = false;
+			//isPrinting = true;	// 线程锁
+			//windows->printWindowList();
+			//isPrinting = false;
 		}
 		Sleep((int)interval);
-		system("cls");
+		//system("cls");
 	}
 
 	return NULL;
@@ -61,7 +61,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		for (int i = 0; i < monitors->getMonitorCount(); i++)
 		{
 			CMonitor* m = monitors->getMonitor(i);
-			snprintf(buf, BUFFER_SIZE,  "%d [%d x %d]\0", i, m->getRight()-m->getLeft(), m->getBottom()-m->getTop());
+			snprintf(buf, BUFFER_SIZE,  "%d [%d x %d]\0", i, m->getClientRight()-m->getClientLeft(), m->getClientBottom()-m->getClientTop());
 			cbAddItem(hCBMonitors, buf);
 			if (i == 0)
 			{
@@ -69,7 +69,6 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				updateWindowsList();
 			}
 		}
-
 		CreateThread(NULL, 0, timerProc, (LPVOID)TIMER_INTERVAL_MS, NULL, NULL);
 	}
 		break;
@@ -274,7 +273,7 @@ void ReadjustMainWindow(HWND hWnd, int nWidth, int nHeight)
 	tx = (tx - nWidth - ptDiff.x) / 2;
 	ty = (ty - nHeight - ptDiff.y) / 2;
 
-	MoveWindow(hWnd, tx, ty, nWidth + ptDiff.x, nHeight + ptDiff.y, TRUE);
+	SetWindowPos(hWnd, HWND_TOPMOST, tx, ty, nWidth+ptDiff.x, nHeight+ptDiff.y, NULL);
 }
 
 void updateWindowInfo()
@@ -368,7 +367,6 @@ void updateWindowsList()
 
 void AdjustWindows()
 {
-
 	int n_monitor = monitors->getMonitorCount();
 
 	int* n_window = new int[n_monitor];
@@ -382,8 +380,8 @@ void AdjustWindows()
 	{
 		n_window[i] = 0;
 		// 获取每个屏幕的起点。
-		biasy[i] = monitors->getMonitor(i)->getTop() + WINDOW_MARGIN;
-		biasx[i] = monitors->getMonitor(i)->getLeft() + WINDOW_MARGIN;
+		biasy[i] = monitors->getMonitor(i)->getClientTop() + WINDOW_MARGIN_Y;
+		biasx[i] = monitors->getMonitor(i)->getClientLeft() + WINDOW_MARGIN_X;
 	}
 
 	list<CWindow>::iterator itr;
@@ -392,6 +390,7 @@ void AdjustWindows()
 		// 获取每个显示器中窗口的个数
 		int n = monitors->monitorFromWindow(itr->getHandle());
 		if (n < 0 || n >= n_monitor) continue;	// 数据与已有数据不符，则跳过
+		if (itr->getHandle() == hWnd) continue; // 跳过本程序窗口
 		// if (n>=0 && n<n_monitor) 
 		n_window[n]++;
 	}
@@ -400,11 +399,11 @@ void AdjustWindows()
 	{
 		// 如果某个显示器下的窗口数量为0，则跳过该显示器。
 		if (n_window[i] == 0) continue;
-		winh[i] = monitors->getHeight(i);
-		winw[i] = monitors->getWidth(i);
-		add[i] = (winw[i]-WINDOW_MARGIN)/n_window[i];
-		winh[i] -= WINDOW_MARGIN * 2;
-		winw[i] = add[i] - WINDOW_MARGIN;
+		winh[i] = monitors->getClientHeight(i);
+		winw[i] = monitors->getClientWidth(i);
+		add[i] = (winw[i]-WINDOW_MARGIN_X)/n_window[i];
+		winh[i] -= WINDOW_MARGIN_Y * 2;
+		winw[i] = add[i] - WINDOW_MARGIN_X;
 	}
 
 	// 根据已有数据，调整窗口大小与位置。
@@ -412,6 +411,7 @@ void AdjustWindows()
 	{
 		// n_window[monitors->monitorFromWindow(itr->getHandle())]++;
 		HWND hw = itr->getHandle();
+		if (hw == hWnd) continue; // 跳过本程序窗口
 		int n = monitors->monitorFromWindow(hw);
 		if (n<0 || n >= n_monitor) continue;	// 数据与已有数据不符，则跳过
 		if (n_window[n] == 0) continue;
@@ -446,46 +446,23 @@ void cbClearList(HWND hwnd)
 
 typedef list<CWindow>::iterator CWINITR;
 
-
+/*
 // 测试用主函数，正式编译时请将此主函数删除哦，并修改工程属性为窗口
 int main()
 {
 
-	HINSTANCE hinstance = GetModuleHandle(0);
-	WinMain(hinstance, 0, NULL, 0);
+	// HINSTANCE hinstance = GetModuleHandle(0);
+	// WinMain(hinstance, 0, NULL, 0);
+	MONITORINFO mi;
 
+	MonitorManager* mm = new MonitorManager();
+	CMonitor* m = mm->getMonitor(0);
+	m->getInfo(&mi);
 
-	//list<CWindow> list1;
-	//for (int i = 1; i < 10; i++)
-	//{
-	//	list1.push_back(*new CWindow((HWND)i));
-	//}
+	
 
-	//CWINITR itr;
-	//for (itr = list1.begin(); itr != list1.end(); itr++)
-	//{
-	//	cout << itr->getHandle() << endl;
-	//}
-
-	//for (itr = list1.begin(); itr != list1.end(); itr++)
-	//{
-	//	// cout << itr->getHandle() << endl;
-	//	if (itr->getHandle() == (HWND)5)
-	//	{
-	//		itr = list1.erase(itr);
-	//		// break;
-	//	}
-	//}
-
-	//
-	//cout << endl << endl << endl;
-
-	//for (itr = list1.begin(); itr != list1.end(); itr++)
-	//{
-	//	cout << itr->getHandle() << endl;
-	//}
 
 
 	return 0;
 }
-
+*/

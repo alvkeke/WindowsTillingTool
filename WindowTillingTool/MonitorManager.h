@@ -7,21 +7,25 @@ using namespace std;
 class CMonitor {
 public:
 
-	CMonitor(int primaryflag, int top, int left, int bottom, int right);
+	//CMonitor(int primaryflag, int top, int left, int bottom, int right);
+	CMonitor(HMONITOR hmonitor);
 
-	int getTop();
-	int getBottom();
-	int getLeft();
-	int getRight();
+	HMONITOR getHandle();
+	int getClientTop();
+	int getClientBottom();
+	int getClientLeft();
+	int getClientRight();
 	bool isPrimary();
+	void getInfo(LPMONITORINFO mi);
 	float getOverlapRate(HWND hwnd);
 
 private:
-	bool mbPrimary;
-	int miTop;
-	int miLeft;
-	int miBottom;
-	int miRight;
+	HMONITOR hMonitor;
+	//bool mbPrimary;
+	//int mTop;
+	//int mLeft;
+	//int mBottom;
+	//int mRight;
 };
 
 class MonitorManager
@@ -32,7 +36,8 @@ public:
 	void refreshMonitors();
 	int getMonitorCount();
 	CMonitor* getMonitor(int index);
-	void addMonitorNode(int primaryflag, int top, int left, int bottom, int right);
+	// void addMonitorNode(int primaryflag, int top, int left, int bottom, int right);
+	void addMonitorNode(HMONITOR h);
 	void clearMonitors();
 
 	int getWidth(int index);
