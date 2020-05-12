@@ -11,6 +11,7 @@ using namespace std;
 
 #define IGNORE_WND_CLASS_MAX_LEN 100
 
+
 class CWindow {
 public:
 
@@ -33,6 +34,8 @@ public:
 private:
 	HWND mHwnd;
 };
+
+typedef list<CWindow>::iterator CWINITR;
 
 class WindowsManager {
 public:

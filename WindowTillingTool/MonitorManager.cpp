@@ -102,16 +102,8 @@ float CMonitor::getOverlapRate(HWND hwnd)
 
 BOOL CALLBACK MonitorManager :: EnumMonitorCallback(HMONITOR handle, HDC hdc, LPRECT rect, LPARAM param)
 {
-	//MONITORINFO mi;
 	MonitorManager* manager = (MonitorManager*)param;
-
-	//mi.cbSize = sizeof(mi);
-	//GetMonitorInfo(handle, &mi);
-
-	//manager->addMonitorNode(mi.dwFlags,
-	//	mi.rcMonitor.top, mi.rcMonitor.left, mi.rcMonitor.bottom, mi.rcMonitor.right);
 	manager->addMonitorNode(handle);
-
 	return true;
 }
 
@@ -125,8 +117,8 @@ MonitorManager :: MonitorManager()
 
 void MonitorManager::refreshMonitors()
 {
-
-	if (!mMonitors.empty()) mMonitors.clear();
+	//if (!mMonitors.empty()) mMonitors.clear();
+	mMonitors.clear();
 	EnumDisplayMonitors(NULL, NULL, EnumMonitorCallback, (LPARAM)this);
 }
 
@@ -140,10 +132,7 @@ CMonitor* MonitorManager::getMonitor(int index)
 
 	list<CMonitor>::iterator itr = mMonitors.begin();
 	if (mMonitors.size() < index) return nullptr;
-	for (; index > 0; index--)
-	{
-		itr++;
-	}
+	advance(itr, index);
 	return &(*itr);
 }
 
@@ -157,16 +146,31 @@ void MonitorManager::clearMonitors()
 	mMonitors.clear();
 }
 
+list<CMonitor>::iterator MonitorManager::getItrBegin()
+{
+	return mMonitors.begin();
+}
+
+bool MonitorManager::isItrEnd(list<CMonitor>::iterator itr)
+{
+	return itr==mMonitors.end();
+}
+
 int MonitorManager::getWidth(int index)
 {
+	MONITORINFO mi;
 	CMonitor* monitor = getMonitor(index);
-	return monitor->getClientRight() - monitor->getClientLeft();
+	monitor->getInfo(&mi);
+
+	return mi.rcMonitor.right - mi.rcMonitor.left;//monitor->getRight() - monitor->getLeft();
 }
 
 int MonitorManager::getHeight(int index)
 {
+	MONITORINFO mi;
 	CMonitor* monitor = getMonitor(index);
-	return monitor->getClientBottom() - monitor->getClientTop();
+	monitor->getInfo(&mi);
+	return mi.rcMonitor.bottom - mi.rcMonitor.top;//monitor->getBottom() - monitor->getTop();
 }
 
 int MonitorManager::getClientWidth(int index)

@@ -4,23 +4,23 @@ using namespace std;
 
 char filter_full[][IGNORE_WND_CLASS_MAX_LEN] = {
 	// "ApplicationFrameWindow",	// 此类名为UWP应用的类名, 不能通过类名过滤
-	"dummydwmlistenerwindow",
-	"edgeuiinputtopwndclass",
-	"windows.ui.core.corewindow",
-	"progman",		// 
-	"shell_traywnd",
-	"internet explorer_hidden",
-	"thumbnaildevicehelperwnd",
-	"workerw",
-	"multitaskingviewframe",
-	"sysshadow",
-	"shell_cortanaproxy",
-	"tooltips_class32",
-	"tasklistoverlaywnd",
-	"tasklistthumbnailwnd",
-	"listbox",
-	"syslink",
-	"sysipaddress32",
+	// "dummydwmlistenerwindow",
+	// "edgeuiinputtopwndclass",
+	// "windows.ui.core.corewindow",
+	// "progman",		// 
+	// "shell_traywnd",
+	// "internet explorer_hidden",
+	// "thumbnaildevicehelperwnd",
+	// "workerw",
+	// "multitaskingviewframe",
+	// "sysshadow",
+	// "shell_cortanaproxy",
+	// "tooltips_class32",
+	// "tasklistoverlaywnd",
+	// "tasklistthumbnailwnd",
+	// "syslink",
+	// "sysipaddress32",
+	// "listbox",
 	// "syslistview32",
 	// "systreeview32",
 	// "msctls_progress32",
@@ -34,9 +34,10 @@ char filter_full[][IGNORE_WND_CLASS_MAX_LEN] = {
 
 char filter_part[][IGNORE_WND_CLASS_MAX_LEN] = {
 	//"HwndWrapper",
-	"#32768",
-	"#32770",
-	"#32774"
+	"#32768",	//	弹出菜单
+	//"#32770",
+	"#32774",	//	提示弹出文字框
+	
 };
 
 
@@ -75,7 +76,8 @@ void CWindow::setSize(int w, int h)
 
 void CWindow::setRect(LPRECT rect)
 {
-	MoveWindow(mHwnd, rect->left, rect->top, rect->right - rect->left, rect->bottom - rect->top, true);
+	MoveWindow(mHwnd, rect->left, rect->top, 
+		rect->right - rect->left, rect->bottom - rect->top, true);
 }
 
 void CWindow::getText(char* buf, int n_buf)
@@ -97,7 +99,6 @@ boolean CWindow::isNormalShow()
 	return false;
 }
 
-
 WindowsManager::WindowsManager()
 {
 	mAllWindows.clear();
@@ -114,7 +115,6 @@ int WindowsManager::getAllWindowCount()
 {
 	return mAllWindows.size();
 }
-
 
 int WindowsManager::getAllShowWindowCount()
 {
@@ -174,6 +174,14 @@ void WindowsManager::clearOutdateWindows()
 			itr = mAllWindows.erase(itr);
 			itr--;
 		}
+		else
+		{
+			if (!IsWindowVisible(itr->getHandle()))
+			{
+				itr = mAllWindows.erase(itr);
+				itr--;
+			}
+		}
 	}
 }
 
@@ -189,7 +197,6 @@ void WindowsManager::clearWindows()
 
 void WindowsManager::printWindowList()
 {
-
 	char buf[IGNORE_WND_CLASS_MAX_LEN];
 	RECT r;
 	list<CWindow>::iterator itr;
@@ -236,7 +243,7 @@ BOOL WindowsManager::EnumWndProc(HWND hwnd, LPARAM lparam)
 	{
 		// 判断UWP应用是否真正的显示
 		DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, &nCloaked, sizeof(INT));
-		if (nCloaked) return true;
+		if (nCloaked) return true;	// nCloaked为真则说明窗口没有真正显示
 	}
 	else
 	{
@@ -257,7 +264,7 @@ BOOL WindowsManager::EnumWndProc(HWND hwnd, LPARAM lparam)
 	}
 
 	int style = GetWindowLong(hwnd, GWL_STYLE);
-	if (! (style & WS_CAPTION)) return true;
+	if (! (style & WS_OVERLAPPEDWINDOW)) return true;
 	
 	wm->addWindowNode(hwnd);
 	

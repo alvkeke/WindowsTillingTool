@@ -7,7 +7,6 @@ using namespace std;
 class CMonitor {
 public:
 
-	//CMonitor(int primaryflag, int top, int left, int bottom, int right);
 	CMonitor(HMONITOR hmonitor);
 
 	HMONITOR getHandle();
@@ -21,11 +20,6 @@ public:
 
 private:
 	HMONITOR hMonitor;
-	//bool mbPrimary;
-	//int mTop;
-	//int mLeft;
-	//int mBottom;
-	//int mRight;
 };
 
 class MonitorManager
@@ -36,9 +30,11 @@ public:
 	void refreshMonitors();
 	int getMonitorCount();
 	CMonitor* getMonitor(int index);
-	// void addMonitorNode(int primaryflag, int top, int left, int bottom, int right);
 	void addMonitorNode(HMONITOR h);
 	void clearMonitors();
+
+	list<CMonitor>::iterator getItrBegin();
+	bool isItrEnd(list<CMonitor>::iterator itr);
 
 	int getWidth(int index);
 	int getHeight(int index);

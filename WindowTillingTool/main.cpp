@@ -1,4 +1,5 @@
 #include "main.h"
+#include "TileManager.h"
 
 HINSTANCE mhInstance;
 
@@ -12,10 +13,8 @@ HWND hETHwnd;
 HWND hETPos;
 HWND hETSize;
 
-MonitorManager* monitors;
-WindowsManager* windows;
-
 list<CWindow> winlist;
+TileManager* tileManager;
 
 bool isPrinting = false;
 
@@ -23,18 +22,16 @@ DWORD WINAPI timerProc(LPVOID interval)
 {
 	while (true)
 	{
-		if (windows)
+		if (tileManager)
 		{
-			windows->refreshWindowList();
-			AdjustWindows();
-			// updateWindowsList();
-			// updateWindowInfo();
-			//isPrinting = true;	// 线程锁
-			//windows->printWindowList();
-			//isPrinting = false;
+			tileManager->refreshWinList();
+			tileManager->tileWindows();
+			isPrinting = true;	// 线程锁
+			tileManager->printWinList();
+			isPrinting = false;
 		}
-		Sleep((int)interval);
-		//system("cls");
+		Sleep((DWORD)interval);
+		system("cls");
 	}
 
 	return NULL;
@@ -50,32 +47,32 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		char buf[BUFFER_SIZE];
 
 		isPrinting = false;
-		winlist.clear();
 
 		initCompoents(hWnd);
 		ReadjustMainWindow(hWnd, 560, 470);
 
-		windows = new WindowsManager();
-		monitors = new MonitorManager();
+		tileManager = new TileManager(hWnd);
 
-		for (int i = 0; i < monitors->getMonitorCount(); i++)
+		for (int i = 0; i < tileManager->getScnCount(); i++)
 		{
-			CMonitor* m = monitors->getMonitor(i);
-			snprintf(buf, BUFFER_SIZE,  "%d [%d x %d]\0", i, m->getClientRight()-m->getClientLeft(), m->getClientBottom()-m->getClientTop());
+			CMonitor* m = tileManager->getScreen(i);
+			snprintf(buf, BUFFER_SIZE,  "%d [%d x %d]\0", i,
+				m->getClientRight()-m->getClientLeft(), m->getClientBottom()-m->getClientTop());
+
 			cbAddItem(hCBMonitors, buf);
 			if (i == 0)
 			{
 				SendMessage(hCBMonitors, CB_SELECTSTRING, 0, (WPARAM)buf);
-				updateWindowsList();
+				updateWinListBox();
 			}
 		}
+
 		CreateThread(NULL, 0, timerProc, (LPVOID)TIMER_INTERVAL_MS, NULL, NULL);
 	}
 		break;
 	case WM_RBUTTONUP:
 	{
-		// AdjustWindows();
-		// MessageBox(0, "", "", 0);
+		// TileWindows();
 	}
 		break;
 	case WM_COMMAND:
@@ -85,7 +82,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		{
 			// if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				updateWindowsList();
+				updateWinListBox();
 			}
 		}
 		else if (id == ID_LB_WINDOWS)
@@ -280,7 +277,7 @@ void updateWindowInfo()
 {
 	char buf[BUFFER_SIZE];
 	int monitorindex;
-	int listmax;
+	LRESULT listmax;
 	int winindex;
 
 	GetWindowText(hCBMonitors, buf, BUFFER_SIZE);
@@ -300,7 +297,7 @@ void updateWindowInfo()
 
 	for (winindex = 0; winindex < listmax; winindex++)
 	{
-		int res = SendMessage(hLBWindows, LB_GETSEL, (WPARAM)winindex, NULL);
+		LRESULT res = SendMessage(hLBWindows, LB_GETSEL, (WPARAM)winindex, NULL);
 		if (res)
 		{
 			break;
@@ -317,7 +314,7 @@ void updateWindowInfo()
 	SetWindowText(hETClass, buf);
 	win->getText(buf, BUFFER_SIZE);
 	SetWindowText(hETText, buf);
-	snprintf(buf, BUFFER_SIZE, "%d", win->getHandle());
+	snprintf(buf, BUFFER_SIZE, "%lld", (long long)win->getHandle());
 	SetWindowText(hETHwnd, buf);
 	POINT p;
 	win->getPos(&p);
@@ -329,13 +326,12 @@ void updateWindowInfo()
 	SetWindowText(hETSize, buf);
 }
 
-void updateWindowsList()
+void updateWinListBox()
 {
 	char buf[BUFFER_SIZE];
-	//if (isPrinting) return;
 	while (isPrinting);	// 在打印窗口信息时，等待，防止段错误。
 
-	windows->refreshWindowList();
+	tileManager->refreshWinList();
 
 	GetWindowText(hCBMonitors, buf, BUFFER_SIZE);
 	for (int i = 0; i < BUFFER_SIZE; i++)
@@ -351,76 +347,17 @@ void updateWindowsList()
 
 	lbClearList(hLBWindows);
 
-	list<CWindow>::iterator itr = windows->getItrBegin();
+	list<CWindow>::iterator itr = tileManager->getWinListItr();
 	winlist.clear();
-	for (; !windows->isItrEnd(itr); itr++)
+	for (; !tileManager->isItrEnd(itr); itr++)
 	{
-		if (monitors->monitorFromWindow(itr->getHandle()) == monitorindex)
+		if (tileManager->screenFromWindow(itr->getHandle()) == monitorindex)
 		{
 			itr->getText(buf, BUFFER_SIZE);
 			lbAddItem(hLBWindows, buf);
 			winlist.push_back(*itr);
 		}
 	}
-
-}
-
-void AdjustWindows()
-{
-	int n_monitor = monitors->getMonitorCount();
-
-	int* n_window = new int[n_monitor];
-	int* winw = new int[n_monitor];
-	int* winh = new int[n_monitor];
-	int* biasy = new int[n_monitor];
-	int* biasx = new int[n_monitor];
-	int* add = new int[n_monitor];
-
-	for (int i = 0; i < n_monitor; i++)
-	{
-		n_window[i] = 0;
-		// 获取每个屏幕的起点。
-		biasy[i] = monitors->getMonitor(i)->getClientTop() + WINDOW_MARGIN_Y;
-		biasx[i] = monitors->getMonitor(i)->getClientLeft() + WINDOW_MARGIN_X;
-	}
-
-	list<CWindow>::iterator itr;
-	for (itr = windows->getItrBegin(); !windows->isItrEnd(itr); itr++)
-	{
-		// 获取每个显示器中窗口的个数
-		int n = monitors->monitorFromWindow(itr->getHandle());
-		if (n < 0 || n >= n_monitor) continue;	// 数据与已有数据不符，则跳过
-		if (itr->getHandle() == hWnd) continue; // 跳过本程序窗口
-		// if (n>=0 && n<n_monitor) 
-		n_window[n]++;
-	}
-
-	for (int i = 0; i < n_monitor; i++)
-	{
-		// 如果某个显示器下的窗口数量为0，则跳过该显示器。
-		if (n_window[i] == 0) continue;
-		winh[i] = monitors->getClientHeight(i);
-		winw[i] = monitors->getClientWidth(i);
-		add[i] = (winw[i]-WINDOW_MARGIN_X)/n_window[i];
-		winh[i] -= WINDOW_MARGIN_Y * 2;
-		winw[i] = add[i] - WINDOW_MARGIN_X;
-	}
-
-	// 根据已有数据，调整窗口大小与位置。
-	for (itr = windows->getItrBegin(); !windows->isItrEnd(itr); itr++)
-	{
-		// n_window[monitors->monitorFromWindow(itr->getHandle())]++;
-		HWND hw = itr->getHandle();
-		if (hw == hWnd) continue; // 跳过本程序窗口
-		int n = monitors->monitorFromWindow(hw);
-		if (n<0 || n >= n_monitor) continue;	// 数据与已有数据不符，则跳过
-		if (n_window[n] == 0) continue;
-		ShowWindow(hw, SW_NORMAL);
-		MoveWindow(hw, biasx[n], biasy[n], winw[n], winh[n], true);
-		biasx[n] += add[n];
-	}
-
-	return;
 
 }
 
@@ -444,25 +381,21 @@ void cbClearList(HWND hwnd)
 	SendMessage(hwnd, CB_RESETCONTENT, NULL, NULL);
 }
 
-typedef list<CWindow>::iterator CWINITR;
-
-/*
 // 测试用主函数，正式编译时请将此主函数删除哦，并修改工程属性为窗口
 int main()
 {
 
-	// HINSTANCE hinstance = GetModuleHandle(0);
-	// WinMain(hinstance, 0, NULL, 0);
-	MONITORINFO mi;
+	 HINSTANCE hinstance = GetModuleHandle(0);
+	 WinMain(hinstance, 0, NULL, 0);
 
-	MonitorManager* mm = new MonitorManager();
-	CMonitor* m = mm->getMonitor(0);
-	m->getInfo(&mi);
-
-	
-
-
+	//WindowsManager* w = new WindowsManager();
+	//while (1)
+	//{
+	//	system("cls");
+	//	w->refreshWindowList();
+	//	w->printWindowList();
+	//	Sleep(1000);
+	//}
 
 	return 0;
 }
-*/
