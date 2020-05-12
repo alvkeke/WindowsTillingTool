@@ -117,7 +117,6 @@ MonitorManager :: MonitorManager()
 
 void MonitorManager::refreshMonitors()
 {
-	//if (!mMonitors.empty()) mMonitors.clear();
 	mMonitors.clear();
 	EnumDisplayMonitors(NULL, NULL, EnumMonitorCallback, (LPARAM)this);
 }

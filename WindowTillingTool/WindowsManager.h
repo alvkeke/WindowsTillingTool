@@ -41,10 +41,11 @@ class WindowsManager {
 public:
 	WindowsManager();
 
-	void refreshWindowList();
+	bool refreshWindowList();
 	void addWindowNode(HWND hwnd);
 	void clearWindows();
 	void printWindowList();
+	void setListChanged();
 
 	int getAllWindowCount();
 	int getAllShowWindowCount();
@@ -59,6 +60,6 @@ public:
 
 private:
 	list<CWindow> mAllWindows;
-
+	bool bListChanged;
 	static BOOL CALLBACK EnumWndProc(HWND hwnd, LPARAM lparam);
 };

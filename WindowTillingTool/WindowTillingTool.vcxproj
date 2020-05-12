@@ -138,18 +138,28 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BlockSettingWindow.cpp" />
+    <ClCompile Include="common.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MonitorManager.cpp" />
     <ClCompile Include="SettingWindow.cpp" />
     <ClCompile Include="TileManager.cpp" />
+    <ClCompile Include="TrayIcon.cpp" />
     <ClCompile Include="WindowsManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BlockSettingWindow.h" />
+    <ClInclude Include="common.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="MonitorManager.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="SettingWIndow.h" />
     <ClInclude Include="TileManager.h" />
+    <ClInclude Include="TrayIcon.h" />
     <ClInclude Include="WindowsManager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="WindowTillingTool.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

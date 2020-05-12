@@ -1,9 +1,16 @@
 #include "main.h"
 #include "TileManager.h"
+#include "TrayIcon.h"
+#include "resource.h"
+#include "BlockSettingWindow.h"
 
 HINSTANCE mhInstance;
 
+HWND hConsoleWnd;
 HWND hWnd;
+HMENU hMenu;
+
+HANDLE hTimer;
 
 HWND hCBMonitors;
 HWND hLBWindows;
@@ -16,22 +23,37 @@ HWND hETSize;
 list<CWindow> winlist;
 TileManager* tileManager;
 
-bool isPrinting = false;
+bool bPrintThreadLock = false;
+bool bConsolePrint;
+bool isThreadRunning;
+
 
 DWORD WINAPI timerProc(LPVOID interval)
 {
+	long interval_ms = (DWORD)interval;
+
 	while (true)
 	{
+		
+		if (!isThreadRunning) return NULL;
 		if (tileManager)
 		{
-			tileManager->refreshWinList();
+			if (tileManager->refreshWinList())
+			{
+				updateWinListBox();
+			}
 			tileManager->tileWindows();
-			isPrinting = true;	// 线程锁
-			tileManager->printWinList();
-			isPrinting = false;
+			
+			if (bConsolePrint)
+			{
+				bPrintThreadLock = true;	// 线程锁
+				tileManager->printWinList();
+				bPrintThreadLock = false;
+			}
+			
 		}
-		Sleep((DWORD)interval);
-		system("cls");
+		Sleep(interval_ms);
+		if (bConsolePrint) system("cls");
 	}
 
 	return NULL;
@@ -46,12 +68,18 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	{
 		char buf[BUFFER_SIZE];
 
-		isPrinting = false;
+		bPrintThreadLock = false;
+
+		hMenu = LoadMenu(mhInstance, MAKEINTRESOURCE(IDR_MENU1));
 
 		initCompoents(hWnd);
-		ReadjustMainWindow(hWnd, 560, 470);
+		initTrayIcon(hWnd);
+		ReadjustWindow(hWnd, 560, 470);
 
 		tileManager = new TileManager(hWnd);
+		tileManager->addClassBlock(APP_WIN_CLASS_MAIN);
+		tileManager->addClassBlock(APP_WIN_CLASS_BLOCK);
+		tileManager->addTextBlock(APP_TITLE_CONSOLE);
 
 		for (int i = 0; i < tileManager->getScnCount(); i++)
 		{
@@ -67,17 +95,21 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 		}
 
-		CreateThread(NULL, 0, timerProc, (LPVOID)TIMER_INTERVAL_MS, NULL, NULL);
+		isThreadRunning = true;
+		hTimer = CreateThread(NULL, 0, timerProc, (LPVOID)TIMER_INTERVAL_MS, NULL, NULL);
 	}
 		break;
+
 	case WM_RBUTTONUP:
 	{
-		// TileWindows();
+		popupMenu(hWnd);
 	}
 		break;
+
 	case WM_COMMAND:
 	{
-		int id = LOWORD(wparam);
+		UINT id = LOWORD(wparam);
+
 		if (id == ID_CB_MONITOR)
 		{
 			// if (HIWORD(wparam) == CBN_SELCHANGE)
@@ -87,18 +119,109 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		}
 		else if (id == ID_LB_WINDOWS)
 		{
-			if (HIWORD(wparam) == LBN_SELCHANGE)
+			UINT action = HIWORD(wparam);
+			if (action == LBN_SELCHANGE)
 			{
 				updateWindowInfo();
 			}
+			else if (action == LBN_DBLCLK)
+			{
+				char buf1[BUFFER_SIZE];
+				char buf2[BUFFER_SIZE];
+
+				int winindex = lbGetSelectItem();
+				if (winindex < 0) break;
+
+				list<CWindow>::iterator win = winlist.begin();
+				advance(win, winindex);
+
+				win->getClassName(buf1, BUFFER_SIZE);
+				win->getText(buf2, BUFFER_SIZE);
+				HWND htmp = createBlkSetWnd(mhInstance, hWnd);
+				SendMessage(htmp, WM_BLOCK_SETSTRINFO, (WPARAM)buf1, (LPARAM)buf2);
+				SendMessage(htmp, WM_BLOCK_SETHWND, (WPARAM)win->getHandle(), NULL);
+			}
+		}
+		else if (id == IDSM_EXIT)
+		{
+			delTrayIcon();
+			PostQuitMessage(0);
+		}
+		else if (id == IDSM_ENABLE_TILING)
+		{
+			if (isThreadRunning)
+			{
+				isThreadRunning = false;
+			}
+			else
+			{
+				isThreadRunning = true;
+				hTimer = CreateThread(NULL, 0, timerProc, (LPVOID)TIMER_INTERVAL_MS, NULL, NULL);
+			}
+		}
+		else if (id == IDSM_ENABLE_MOUSETOOL)
+		{
+
+		}
+		else if (id == IDSM_SHOW_CONSOLE)
+		{
+			bConsolePrint = !IsWindowVisible(hConsoleWnd);
+			if (bConsolePrint)
+			{
+				ShowWindow(hConsoleWnd, SW_SHOW);
+			}
+			else
+			{
+				ShowWindow(hConsoleWnd, SW_HIDE);
+			}
+		}
+		else if (id == IDSM_ENABLE_CONSOLE_OUTPUT)
+		{
+			bConsolePrint = !bConsolePrint;
+		}
+		else if (id == IDSM_BLOCK_WINDOW)
+		{
+
 		}
 	}
-
 		break;
+
+	case WM_BLOCK_CALLBACK:
+	{
+		switch (wparam)
+		{
+		case BLOCK_CALLBACK_HWND:
+			tileManager->addHwndBlock((HWND)lparam);
+			break;
+		case BLOCK_CALLBACK_CLASS:
+			tileManager->addClassBlock((LPSTR)lparam);
+			break;
+		case BLOCK_CALLBACK_TEXT:
+			tileManager->addTextBlock((LPSTR)lparam);
+			break;
+		}
+	}
+		break;
+
+	case MSG_TRAYICON:
+	{
+		if (lparam == WM_LBUTTONDBLCLK)
+		{
+			ShowWindow(hWnd, SW_SHOW);
+		}
+		else if (lparam == WM_RBUTTONUP)
+		{
+			popupMenu(hWnd);
+		}
+	}
+		break;
+
 	case WM_CLOSE:
-		PostQuitMessage(0);
+		ShowWindow(hWnd, SW_HIDE);
+		return true;	//防止窗口被销毁
 		break;
 	case WM_DESTROY:
+		delTrayIcon();
 		PostQuitMessage(0);
 		break;
 	}
@@ -122,7 +245,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInstace, LPSTR args, int a
 	wnc.hIcon = (HICON)LoadIcon(NULL, IDI_APPLICATION);
 	wnc.style = CS_HREDRAW | CS_VREDRAW;
 	wnc.cbWndExtra = NULL;
-	wnc.lpszClassName = "WinTool_Main";
+	wnc.lpszClassName = APP_WIN_CLASS_MAIN;
 	wnc.lpszMenuName = NULL;
 	
 	if (!RegisterClass(&wnc))
@@ -130,8 +253,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInstace, LPSTR args, int a
 		MessageBox(0, "Register Window Class Failed.", "ERROR", MB_ICONERROR);
 		return -1;
 	}
+
+	if (!registerBlkWndClass(mhInstance))
+	{
+		MessageBox(0, "Register Window Class Failed.", "ERROR", MB_ICONERROR);
+		return -1;
+	}
 	
-	hWnd = CreateWindow(MAINWND_CLASS_NAME, "WinTool",
+	hWnd = CreateWindow(APP_WIN_CLASS_MAIN, APP_TITLE_MAIN,
 		WS_OVERLAPPEDWINDOW^WS_THICKFRAME^WS_MAXIMIZEBOX,
 		CW_USEDEFAULT, CW_USEDEFAULT, 
 		CW_USEDEFAULT, CW_USEDEFAULT,
@@ -253,62 +382,15 @@ void initCompoents(HWND hParent)
 		hParent, (HMENU)ID_EB_SIZE, mhInstance, NULL);
 }
 
-void ReadjustMainWindow(HWND hWnd, int nWidth, int nHeight)
-{
-	RECT rcClient, rcWind;
-	POINT ptDiff;
-	int tx, ty;
-
-	GetClientRect(hWnd, &rcClient);
-	GetWindowRect(hWnd, &rcWind);
-	ptDiff.x = (rcWind.right - rcWind.left) - rcClient.right;
-	ptDiff.y = (rcWind.bottom - rcWind.top) - rcClient.bottom;
-
-	tx = GetSystemMetrics(SM_CXSCREEN);
-	ty = GetSystemMetrics(SM_CYSCREEN);
-
-	tx = (tx - nWidth - ptDiff.x) / 2;
-	ty = (ty - nHeight - ptDiff.y) / 2;
-
-	SetWindowPos(hWnd, HWND_TOPMOST, tx, ty, nWidth+ptDiff.x, nHeight+ptDiff.y, NULL);
-}
-
 void updateWindowInfo()
 {
+
 	char buf[BUFFER_SIZE];
-	int monitorindex;
-	LRESULT listmax;
-	int winindex;
+	int winindex = lbGetSelectItem();
+	if (winindex < 0) return;
 
-	GetWindowText(hCBMonitors, buf, BUFFER_SIZE);
-	for (int i = 0; i < BUFFER_SIZE; i++)
-	{
-		if (buf[i] == '[')
-		{
-			buf[i] = 0x00;
-			break;
-		}
-	}
-
-	monitorindex = atoi(buf);
-
-	listmax = SendMessage(hLBWindows, LB_GETCOUNT, NULL, NULL);
-	if (listmax == LB_ERR) return;
-
-	for (winindex = 0; winindex < listmax; winindex++)
-	{
-		LRESULT res = SendMessage(hLBWindows, LB_GETSEL, (WPARAM)winindex, NULL);
-		if (res)
-		{
-			break;
-		}
-	}
-
-	list<CWindow>::iterator win;
-	for (win = winlist.begin(); win != winlist.end(); win++)
-	{
-		if (winindex-- == 0)break;
-	}
+	list<CWindow>::iterator win = winlist.begin();
+	advance(win, winindex);
 	
 	win->getClassName(buf, BUFFER_SIZE);
 	SetWindowText(hETClass, buf);
@@ -329,7 +411,7 @@ void updateWindowInfo()
 void updateWinListBox()
 {
 	char buf[BUFFER_SIZE];
-	while (isPrinting);	// 在打印窗口信息时，等待，防止段错误。
+	while (bPrintThreadLock);	// 在打印窗口信息时，等待，防止段错误。
 
 	tileManager->refreshWinList();
 
@@ -361,6 +443,40 @@ void updateWinListBox()
 
 }
 
+int lbGetSelectItem()
+{
+	char buf[BUFFER_SIZE];
+	int monitorindex;
+	LRESULT listmax;
+	int winindex;
+
+	GetWindowText(hCBMonitors, buf, BUFFER_SIZE);
+	for (int i = 0; i < BUFFER_SIZE; i++)
+	{
+		if (buf[i] == '[')
+		{
+			buf[i] = 0x00;
+			break;
+		}
+	}
+
+	monitorindex = atoi(buf);
+
+	listmax = SendMessage(hLBWindows, LB_GETCOUNT, NULL, NULL);
+	if (listmax == LB_ERR) return -1;
+
+	for (winindex = 0; winindex < listmax; winindex++)
+	{
+		LRESULT res = SendMessage(hLBWindows, LB_GETSEL, (WPARAM)winindex, NULL);
+		if (res)
+		{
+			break;
+		}
+	}
+
+	return winindex;
+}
+
 void lbAddItem(HWND hwnd, char* str)
 {
 	SendMessage(hwnd, LB_ADDSTRING, NULL, (LPARAM)str);
@@ -381,21 +497,45 @@ void cbClearList(HWND hwnd)
 	SendMessage(hwnd, CB_RESETCONTENT, NULL, NULL);
 }
 
-// 测试用主函数，正式编译时请将此主函数删除哦，并修改工程属性为窗口
+void popupMenu(HWND hwnd)
+{
+	POINT p;
+	GetCursorPos(&p);
+	SetForegroundWindow(hwnd);
+	HMENU pMenu = GetSubMenu(hMenu, 0);
+
+	if (isThreadRunning)
+		CheckMenuItem(pMenu, IDSM_ENABLE_TILING, MF_CHECKED);
+	else
+		CheckMenuItem(pMenu, IDSM_ENABLE_TILING, MF_UNCHECKED);
+
+	if (IsWindowVisible(hConsoleWnd))
+		CheckMenuItem(pMenu, IDSM_SHOW_CONSOLE, MF_CHECKED);
+	else
+		CheckMenuItem(pMenu, IDSM_SHOW_CONSOLE, MF_UNCHECKED);
+
+	if (bConsolePrint)
+		CheckMenuItem(pMenu, IDSM_ENABLE_CONSOLE_OUTPUT, MF_CHECKED);
+	else
+		CheckMenuItem(pMenu, IDSM_ENABLE_CONSOLE_OUTPUT, MF_UNCHECKED);
+
+	int ret = TrackPopupMenu(pMenu, TPM_TOPALIGN, p.x, p.y, NULL, hwnd, NULL);
+
+}
+
 int main()
 {
+	 SetConsoleTitle(APP_TITLE_CONSOLE);
+	 Sleep(50);	//	等待窗口改名完毕
+	 hConsoleWnd = FindWindow("ConsoleWindowClass", APP_TITLE_CONSOLE);
+	 // 更名后使得在寻找窗口的时候更不容易出错。
+
+	 bConsolePrint = false;
+	 ShowWindow(hConsoleWnd, SW_HIDE);
 
 	 HINSTANCE hinstance = GetModuleHandle(0);
 	 WinMain(hinstance, 0, NULL, 0);
 
-	//WindowsManager* w = new WindowsManager();
-	//while (1)
-	//{
-	//	system("cls");
-	//	w->refreshWindowList();
-	//	w->printWindowList();
-	//	Sleep(1000);
-	//}
-
 	return 0;
 }
+

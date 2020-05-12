@@ -16,11 +16,12 @@ char filter_full[][IGNORE_WND_CLASS_MAX_LEN] = {
 	// "sysshadow",
 	// "shell_cortanaproxy",
 	// "tooltips_class32",
+	"notifyiconoverflowwindow",		//托盘图标收纳窗口
 	// "tasklistoverlaywnd",
 	// "tasklistthumbnailwnd",
 	// "syslink",
 	// "sysipaddress32",
-	// "listbox",
+	"listbox",
 	// "syslistview32",
 	// "systreeview32",
 	// "msctls_progress32",
@@ -35,11 +36,10 @@ char filter_full[][IGNORE_WND_CLASS_MAX_LEN] = {
 char filter_part[][IGNORE_WND_CLASS_MAX_LEN] = {
 	//"HwndWrapper",
 	"#32768",	//	弹出菜单
-	//"#32770",
+	"#32770",	//	弹出的消息框,MessageBox()
 	"#32774",	//	提示弹出文字框
 	
 };
-
 
 CWindow::CWindow(HWND hwnd)
 {
@@ -105,10 +105,12 @@ WindowsManager::WindowsManager()
 	EnumDesktopWindows(NULL, EnumWndProc, (LPARAM)this);
 }
 
-void WindowsManager::refreshWindowList()
+bool WindowsManager::refreshWindowList()
 {
+	bListChanged = false;
 	EnumDesktopWindows(NULL, EnumWndProc, (LPARAM)this);
 	clearOutdateWindows();
+	return bListChanged;
 }
 
 int WindowsManager::getAllWindowCount()
@@ -172,6 +174,7 @@ void WindowsManager::clearOutdateWindows()
 		if (!IsWindow(itr->getHandle()))
 		{
 			itr = mAllWindows.erase(itr);
+			setListChanged();
 			itr--;
 		}
 		else
@@ -179,6 +182,7 @@ void WindowsManager::clearOutdateWindows()
 			if (!IsWindowVisible(itr->getHandle()))
 			{
 				itr = mAllWindows.erase(itr);
+				setListChanged();
 				itr--;
 			}
 		}
@@ -209,6 +213,11 @@ void WindowsManager::printWindowList()
 		itr->getClassName(buf, IGNORE_WND_CLASS_MAX_LEN);
 		cout << buf << endl;
 	}
+}
+
+void WindowsManager::setListChanged()
+{
+	bListChanged = true;
 }
 
 BOOL WindowsManager::EnumWndProc(HWND hwnd, LPARAM lparam)
@@ -267,6 +276,7 @@ BOOL WindowsManager::EnumWndProc(HWND hwnd, LPARAM lparam)
 	if (! (style & WS_OVERLAPPEDWINDOW)) return true;
 	
 	wm->addWindowNode(hwnd);
+	wm->setListChanged();
 	
 	return true;
 }

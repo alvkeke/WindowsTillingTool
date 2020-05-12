@@ -1,10 +1,10 @@
 #pragma once
 #include <Windows.h>
 #include <iostream>
+#include "common.h"
 
 using namespace std;
 
-#define MAINWND_CLASS_NAME "WinTool_Main"
 
 // 界面尺寸
 #define COMPOENT_MARGIN 20
@@ -19,28 +19,26 @@ using namespace std;
 #define WIDTH_EDITBOX 300
 
 // 子控件菜单项ID，用于在事件中判断响应事件的控件
-#define ID_CB_MONITOR	1001
-#define ID_LB_WINDOWS	2001
-#define ID_EB_TEXT		3001
-#define ID_EB_CLASS		3002
-#define ID_EB_HWND		3003
-#define ID_EB_POS		3004
-#define ID_EB_SIZE		3005
+#define ID_CB_MONITOR	11001
+#define ID_LB_WINDOWS	12001
+#define ID_EB_TEXT		13001
+#define ID_EB_CLASS		13002
+#define ID_EB_HWND		13003
+#define ID_EB_POS		13004
+#define ID_EB_SIZE		13005
 
-#define BUFFER_SIZE 100
 #define TIMER_INTERVAL_MS 100
 
 void initCompoents(HWND hParent);
-void ReadjustMainWindow(HWND hWnd, int nWidth, int nHeight);
 
 void updateWindowInfo();
 void updateWinListBox();
 
-void TileWindows();
-
+int lbGetSelectItem();
 void lbAddItem(HWND hwnd, char* str);
 void lbClearList(HWND hwnd);
 void cbAddItem(HWND hwnd, char* str);
 void cbClearList(HWND hwnd);
 
+void popupMenu(HWND hwnd);
 
