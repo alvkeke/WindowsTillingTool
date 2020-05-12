@@ -29,16 +29,13 @@ using namespace std;
 
 #define TIMER_INTERVAL_MS 100
 
-void initCompoents(HWND hParent);
 
+void initCompoents(HWND hParent);
 void updateWindowInfo();
 void updateWinListBox();
-
 int lbGetSelectItem();
 void lbAddItem(HWND hwnd, char* str);
 void lbClearList(HWND hwnd);
 void cbAddItem(HWND hwnd, char* str);
 void cbClearList(HWND hwnd);
-
 void popupMenu(HWND hwnd);
-

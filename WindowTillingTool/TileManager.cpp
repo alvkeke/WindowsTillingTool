@@ -108,7 +108,7 @@ bool TileManager::checkBlock(CWINITR itr)
 	list<string>::iterator itrblock;
 	list<HWND>::iterator itrh;
 	string stext, sclass;
-	HWND hwndblock;
+	//HWND hwndblock;
 
 	for (itrh = mHwndBlockList.begin(); itrh != mHwndBlockList.end(); itrh++)
 	{
@@ -206,12 +206,12 @@ void TileManager::tileWindows()
 		biasx[n] += add[n];
 	}
 
-	delete n_window;
-	delete winw;
-	delete winh;
-	delete biasy;
-	delete biasx;
-	delete add;
+	delete[] n_window;
+	delete[] winw;
+	delete[] winh;
+	delete[] biasy;
+	delete[] biasx;
+	delete[] add;
 
 	return;
 }

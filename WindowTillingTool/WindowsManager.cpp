@@ -101,6 +101,7 @@ boolean CWindow::isNormalShow()
 
 WindowsManager::WindowsManager()
 {
+	bListChanged = false;
 	mAllWindows.clear();
 	EnumDesktopWindows(NULL, EnumWndProc, (LPARAM)this);
 }
@@ -223,7 +224,7 @@ void WindowsManager::setListChanged()
 BOOL WindowsManager::EnumWndProc(HWND hwnd, LPARAM lparam)
 {
 	char classbuf[IGNORE_WND_CLASS_MAX_LEN];
-	RECT r;
+	//RECT r;
 	INT nCloaked;
 	WindowsManager* wm;
 	

@@ -525,13 +525,14 @@ void popupMenu(HWND hwnd)
 
 int main()
 {
+
 	 SetConsoleTitle(APP_TITLE_CONSOLE);
 	 Sleep(50);	//	等待窗口改名完毕
 	 hConsoleWnd = FindWindow("ConsoleWindowClass", APP_TITLE_CONSOLE);
 	 // 更名后使得在寻找窗口的时候更不容易出错。
 
-	 bConsolePrint = false;
 	 ShowWindow(hConsoleWnd, SW_HIDE);
+	 bConsolePrint = false;
 
 	 HINSTANCE hinstance = GetModuleHandle(0);
 	 WinMain(hinstance, 0, NULL, 0);

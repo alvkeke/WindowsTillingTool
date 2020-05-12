@@ -1,0 +1,35 @@
+﻿  BlockSettingWindow.cpp
+C:\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(11348,1): warning C4005: “MF_UNCHECKED”: 宏重定义
+C:\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(10362): message : 参见“MF_UNCHECKED”的前一个定义
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\BlockSettingWindow.cpp(85,29): warning C4302: “类型强制转换”: 从“LPSTR”到“WORD”截断
+  common.cpp
+C:\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(11348,1): warning C4005: “MF_UNCHECKED”: 宏重定义
+C:\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(10362): message : 参见“MF_UNCHECKED”的前一个定义
+  main.cpp
+C:\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(11348,1): warning C4005: “MF_UNCHECKED”: 宏重定义
+C:\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(10362): message : 参见“MF_UNCHECKED”的前一个定义
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\main.cpp(33,36): warning C4311: “类型强制转换”: 从“LPVOID”到“DWORD”的指针截断
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\main.cpp(33,36): warning C4302: “类型强制转换”: 从“LPVOID”到“DWORD”截断
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\main.cpp(284,12): warning C4244: “return”: 从“WPARAM”转换到“int”，可能丢失数据
+  MonitorManager.cpp
+C:\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(11348,1): warning C4005: “MF_UNCHECKED”: 宏重定义
+C:\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(10362): message : 参见“MF_UNCHECKED”的前一个定义
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\MonitorManager.cpp(96,48): warning C4244: “=”: 从“int”转换到“float”，可能丢失数据
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\MonitorManager.cpp(97,31): warning C4244: “=”: 从“LONG”转换到“float”，可能丢失数据
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\MonitorManager.cpp(126,25): warning C4267: “return”: 从“size_t”转换到“int”，可能丢失数据
+  SettingWindow.cpp
+  TileManager.cpp
+C:\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(11348,1): warning C4005: “MF_UNCHECKED”: 宏重定义
+C:\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(10362): message : 参见“MF_UNCHECKED”的前一个定义
+  TrayIcon.cpp
+C:\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(11348,1): warning C4005: “MF_UNCHECKED”: 宏重定义
+C:\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(10362): message : 参见“MF_UNCHECKED”的前一个定义
+  WindowsManager.cpp
+C:\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(11348,1): warning C4005: “MF_UNCHECKED”: 宏重定义
+C:\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(10362): message : 参见“MF_UNCHECKED”的前一个定义
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\WindowsManager.cpp(119,27): warning C4267: “return”: 从“size_t”转换到“int”，可能丢失数据
+  正在生成代码
+  Previous IPDB not found, fall back to full compilation.
+  All 643 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  已完成代码的生成
+  WindowTillingTool.vcxproj -> C:\workspace\VS\WindowTillingTool\x64\Release\WindowTillingTool.exe
