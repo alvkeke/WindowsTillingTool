@@ -350,7 +350,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		hMenu = LoadMenu(mhInstance, MAKEINTRESOURCE(IDR_MENU1));
 
 		initCompoents(hWnd);
-		initTrayIcon(hWnd);
+		initTrayIcon(mhInstance, hWnd);
 		ReadjustWindow(hWnd, 560, 470);
 
 		tileManager = new TileManager(hWnd);
@@ -523,7 +523,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInstace, LPSTR args, int a
 	wnc.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
 	wnc.lpszMenuName = NULL;
 	wnc.cbClsExtra = NULL;
-	wnc.hIcon = (HICON)LoadIcon(NULL, IDI_APPLICATION);
+	wnc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APPICON));
 	wnc.style = CS_HREDRAW | CS_VREDRAW;
 	wnc.cbWndExtra = NULL;
 	wnc.lpszClassName = APP_WIN_CLASS_MAIN;

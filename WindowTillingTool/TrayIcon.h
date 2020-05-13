@@ -4,5 +4,5 @@
 #define MSG_TRAYICON WM_USER
 
 
-void initTrayIcon(HWND hwnd);
+void initTrayIcon(HINSTANCE hInstance, HWND hwnd);
 void delTrayIcon();
