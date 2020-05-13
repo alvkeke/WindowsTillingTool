@@ -208,6 +208,11 @@ void TileManager::tileWindows()
 		if (n_window[n] == 0) continue;	// 显示器下无窗口，跳过该显示器
 		if (checkBlock(itr))continue;
 
+		if (n_window[n] == 1)
+		{
+			ShowWindow(hw, SW_MAXIMIZE);
+			continue;
+		}
 		ShowWindow(hw, SW_NORMAL);
 		MoveWindow(hw, biasx[n], biasy[n], winw[n], winh[n], true);
 		biasx[n] += add[n];
