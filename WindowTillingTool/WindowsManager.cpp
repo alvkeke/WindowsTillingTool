@@ -138,7 +138,7 @@ CWindow* WindowsManager::getWindow(int index)
 {
 	list<CWindow>::iterator itr = mAllWindows.begin();
 
-	if (mAllWindows.size() < index) return nullptr;
+	if (mAllWindows.size() <= index) return nullptr;
 
 	advance(itr, index);
 	

@@ -128,9 +128,8 @@ int MonitorManager::getMonitorCount()
 
 CMonitor* MonitorManager::getMonitor(int index)
 {
-
 	list<CMonitor>::iterator itr = mMonitors.begin();
-	if (mMonitors.size() < index) return nullptr;
+	if (mMonitors.size() <= index) return nullptr;
 	advance(itr, index);
 	return &(*itr);
 }

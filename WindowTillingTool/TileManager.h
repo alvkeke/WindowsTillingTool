@@ -7,8 +7,8 @@ using namespace std;
 
 #define BUFFER_SIZE 100
 
-#define WINDOW_MARGIN_X 10
-#define WINDOW_MARGIN_Y 10
+#define WINDOW_PADDING_X 10
+#define WINDOW_PADDING_Y 10
 
 
 class TileManager {
@@ -39,10 +39,14 @@ public:
 
 	bool checkBlock(CWINITR itr);
 
+	void setTilePadding(int x/*-1 no change*/, int y/*-1 no change*/);
 	void tileWindows();
 
 private:
 	HWND mHwndMain;
+
+	int mPaddingX, mPaddingY;
+
 	WindowsManager* mWinManager;
 	MonitorManager* mMonManager;
 

@@ -3,6 +3,7 @@
 #include "TrayIcon.h"
 #include "resource.h"
 #include "BlockSettingWindow.h"
+#include "INIHandler.h"
 
 
 
@@ -49,6 +50,7 @@ bool bConsolePrint;
 /*++++++++++其他变量++++++++++++++++++++++++*/
 list<CWindow> winlist;
 TileManager* tileManager;
+INIHandler* iniHandler;
 
 
 void WinEventProc(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd,
@@ -352,9 +354,11 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		ReadjustWindow(hWnd, 560, 470);
 
 		tileManager = new TileManager(hWnd);
+		/*
 		tileManager->addClassBlock(APP_WIN_CLASS_MAIN);
 		tileManager->addClassBlock(APP_WIN_CLASS_BLOCK);
 		tileManager->addTextBlock(APP_TITLE_CONSOLE);
+		*/
 
 		for (int i = 0; i < tileManager->getScnCount(); i++)
 		{
@@ -370,7 +374,10 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 		}
 
+		loadConfiguration();
+
 		enableTiling();
+		enableMouseTool();
 	}
 		break;
 
@@ -466,13 +473,13 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		switch (wparam)
 		{
 		case BLOCK_CALLBACK_HWND:
-			tileManager->addHwndBlock((HWND)lparam);
+			tileAddHwndBlock((HWND)lparam);
 			break;
 		case BLOCK_CALLBACK_CLASS:
-			tileManager->addClassBlock((LPSTR)lparam);
+			tileAddClassBlock(*new string((LPSTR)lparam));
 			break;
 		case BLOCK_CALLBACK_TEXT:
-			tileManager->addTextBlock((LPSTR)lparam);
+			tileAddTextBlock(*new string((LPSTR)lparam));
 			break;
 		}
 	}
@@ -552,7 +559,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInstace, LPSTR args, int a
 		return -3;
 	}
 
-	ShowWindow(hWnd, SW_SHOW);
+	//ShowWindow(hWnd, SW_SHOW);
 	UpdateWindow(hWnd);
 
 	while (GetMessage(&msg, NULL, 0, 0) != 0)
@@ -808,6 +815,63 @@ void popupMenu(HWND hwnd)
 
 }
 
+void loadConfiguration()
+{
+	iniHandler = new INIHandler();
+	iniHandler->praseFile(INI_FILE_NAME);
+
+	INISection* sec;
+	sec = iniHandler->getSection(SECNAME_TILE_SETTING);
+	if (sec)
+	{
+		string spx = sec->getValue(SC_TILE_PADDINGX);
+		string spy = sec->getValue(SC_TILE_PADDINGY);
+		int px = atoi(spx.c_str());
+		int py = atoi(spy.c_str());
+		tileManager->setTilePadding(px, py);
+	}
+
+	sec = iniHandler->getSection(SECNAME_CLASS_BLOCK_LIST);
+	if(sec)
+	{
+		ITEMITR itr = sec->getItemItr();
+		for (; !sec->isItemItrEnd(itr); itr++)
+		{
+			tileManager->addClassBlock(itr->getValue());
+		}
+	}
+
+	sec = iniHandler->getSection(SECNAME_TEXT_BLOCK_LIST);
+	if (sec)
+	{
+		ITEMITR itr = sec->getItemItr();
+		for (; !sec->isItemItrEnd(itr); itr++)
+		{
+			tileManager->addClassBlock(itr->getValue());
+		}
+	}
+
+}
+
+void tileAddHwndBlock(HWND hwnd)
+{			
+	tileManager->addHwndBlock(hwnd);
+}
+
+void tileAddClassBlock(string classname)
+{
+	tileManager->addClassBlock(classname);
+	iniHandler->addItem(SECNAME_CLASS_BLOCK_LIST, "none", classname);
+	iniHandler->overwiteFile(INI_FILE_NAME);
+}
+
+void tileAddTextBlock(string text)
+{		
+	tileManager->addTextBlock(text);
+	iniHandler->addItem(SECNAME_TEXT_BLOCK_LIST, "none", text);
+	iniHandler->overwiteFile(INI_FILE_NAME);
+}
+
 void enableTiling()
 {
 	// todo: 更改事件响应范围
@@ -823,7 +887,7 @@ void disableTiling()
 
 int initHook(HINSTANCE hInstance)//, HWND hWnd)
 {
-	bMouseToolEnabled = true;
+	bMouseToolEnabled = false;
 	bIsFuncKeyDown = false;
 	bWant2Move = false;
 	bWant2Size = false;
@@ -853,6 +917,8 @@ int initHook(HINSTANCE hInstance)//, HWND hWnd)
 	{
 		return 1;
 	}
+
+	disableMouseTool();
 
 	return 0;
 }

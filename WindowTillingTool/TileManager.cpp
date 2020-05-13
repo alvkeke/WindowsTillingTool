@@ -5,7 +5,8 @@ TileManager::TileManager(HWND hMainWnd)
 	mHwndMain = hMainWnd;
 	mWinManager = new WindowsManager();
 	mMonManager = new MonitorManager();
-
+	mPaddingX = WINDOW_PADDING_X;
+	mPaddingY = WINDOW_PADDING_Y;
 }
 
 int TileManager::getScnCount()
@@ -146,6 +147,12 @@ bool TileManager::checkBlock(CWINITR itr)
 	return false;
 }
 
+void TileManager::setTilePadding(int x, int y)
+{
+	mPaddingX = x;
+	mPaddingY = y;
+}
+
 void TileManager::tileWindows()
 {
 	int n_monitor = mMonManager->getMonitorCount();
@@ -163,8 +170,8 @@ void TileManager::tileWindows()
 	{
 		n_window[i] = 0;
 		// 获取每个屏幕的起点。
-		biasy[i] = mMonManager->getMonitor(i)->getClientTop() + WINDOW_MARGIN_Y;
-		biasx[i] = mMonManager->getMonitor(i)->getClientLeft() + WINDOW_MARGIN_X;
+		biasy[i] = mMonManager->getMonitor(i)->getClientTop() + mPaddingY;
+		biasx[i] = mMonManager->getMonitor(i)->getClientLeft() + mPaddingX;
 	}
 
 	// 窗口第一次
@@ -189,9 +196,9 @@ void TileManager::tileWindows()
 		if (n_window[i] == 0) continue;
 		winh[i] = mMonManager->getClientHeight(i);
 		winw[i] = mMonManager->getClientWidth(i);
-		add[i] = (winw[i] - WINDOW_MARGIN_X) / n_window[i];
-		winh[i] -= WINDOW_MARGIN_Y * 2;
-		winw[i] = add[i] - WINDOW_MARGIN_X;
+		add[i] = (winw[i] - mPaddingX) / n_window[i];
+		winh[i] -= mPaddingY * 2;
+		winw[i] = add[i] - mPaddingX;
 	}
 
 	// 窗口第三次

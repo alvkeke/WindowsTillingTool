@@ -50,6 +50,11 @@ void cbAddItem(HWND hwnd, char* str);
 void cbClearList(HWND hwnd);
 void popupMenu(HWND hwnd);
 
+void loadConfiguration();
+
+void tileAddHwndBlock(HWND hwnd);
+void tileAddClassBlock(string classname);
+void tileAddTextBlock(string text);
 void enableTiling();
 void disableTiling(); 
 int initHook(HINSTANCE hInstance);

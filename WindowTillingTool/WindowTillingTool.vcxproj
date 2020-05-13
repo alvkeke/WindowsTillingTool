@@ -146,6 +146,7 @@
   <ItemGroup>
     <ClCompile Include="BlockSettingWindow.cpp" />
     <ClCompile Include="common.cpp" />
+    <ClCompile Include="INIHandler.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MonitorManager.cpp" />
     <ClCompile Include="SettingWindow.cpp" />
@@ -156,6 +157,7 @@
   <ItemGroup>
     <ClInclude Include="BlockSettingWindow.h" />
     <ClInclude Include="common.h" />
+    <ClInclude Include="INIHandler.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="MonitorManager.h" />
     <ClInclude Include="resource.h" />
