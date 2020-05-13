@@ -354,10 +354,10 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		ReadjustWindow(hWnd, 560, 470);
 
 		tileManager = new TileManager(hWnd);
+		tileManager->addTextBlock(APP_TITLE_CONSOLE);
 		/*
 		tileManager->addClassBlock(APP_WIN_CLASS_MAIN);
 		tileManager->addClassBlock(APP_WIN_CLASS_BLOCK);
-		tileManager->addTextBlock(APP_TITLE_CONSOLE);
 		*/
 
 		for (int i = 0; i < tileManager->getScnCount(); i++)
@@ -377,7 +377,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		loadConfiguration();
 
 		enableTiling();
-		enableMouseTool();
+		// enableMouseTool();	//²âÊÔÊ±¹Ø±Õ
 	}
 		break;
 
@@ -847,7 +847,7 @@ void loadConfiguration()
 		ITEMITR itr = sec->getItemItr();
 		for (; !sec->isItemItrEnd(itr); itr++)
 		{
-			tileManager->addClassBlock(itr->getValue());
+			tileManager->addTextBlock(itr->getValue());
 		}
 	}
 

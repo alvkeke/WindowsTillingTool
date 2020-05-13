@@ -22,6 +22,8 @@ char filter_full[][IGNORE_WND_CLASS_MAX_LEN] = {
 	// "syslink",
 	// "sysipaddress32",
 	"listbox",
+	"sysdragimage",
+	"imagedrag",
 	// "syslistview32",
 	// "systreeview32",
 	// "msctls_progress32",
@@ -37,7 +39,6 @@ char filter_part[][IGNORE_WND_CLASS_MAX_LEN] = {
 	"#32768",	//	弹出菜单
 	"#32770",	//	弹出的消息框,MessageBox()
 	"#32774",	//	提示弹出文字框
-	
 };
 
 CWindow::CWindow(HWND hwnd)
@@ -81,7 +82,7 @@ void CWindow::setRect(LPRECT rect)
 
 void CWindow::getText(char* buf, int n_buf)
 {
-	GetWindowTextA(this->mHwnd, buf, n_buf);
+	GetWindowText(this->mHwnd, buf, n_buf);
 }
 
 void CWindow::getClassName(char* buf, int n_buf)
@@ -210,7 +211,7 @@ void WindowsManager::clearWindows()
 
 void WindowsManager::printWindowList()
 {
-	char buf[IGNORE_WND_CLASS_MAX_LEN];
+	char buf[IGNORE_WND_CLASS_MAX_LEN]; 
 	RECT r;
 	list<CWindow>::iterator itr;
 	for (itr = mAllWindows.begin(); itr != mAllWindows.end(); itr++)
@@ -218,7 +219,7 @@ void WindowsManager::printWindowList()
 		itr->getRect(&r);
 		itr->getText(buf, IGNORE_WND_CLASS_MAX_LEN);
 		cout << r.left << "," << r.top << ": " << r.right << "," << r.bottom << "\t\t";
-		cout << " : " << buf << " : ";
+		cout << ":" << buf << ":";
 		itr->getClassName(buf, IGNORE_WND_CLASS_MAX_LEN);
 		cout << buf << endl;
 	}

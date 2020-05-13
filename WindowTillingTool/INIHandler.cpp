@@ -97,7 +97,6 @@ void INIHandler::praseFile(string filename)
 
 	iniIn.open(filename, ios::in);
 
-
 	while (getline(iniIn, sline))
 	{
 		if (sline[0] == ';')continue;	//×¢ÊÍÐÐ
@@ -114,7 +113,7 @@ void INIHandler::praseFile(string filename)
 				while (section[0] == ' ')section = section.substr(1);
 				while (section[section.size() - 1] == ' ') section = section.substr(0, section.size() - 1);
 				addSection(section);
-				cout << "|" << section << "|" << endl << endl;
+				cout << endl << "[" << section << "]" << endl;
 			}
 			continue;
 		}
@@ -147,7 +146,7 @@ void INIHandler::praseFile(string filename)
 			addItem(section, key, value);
 
 			cout << "|" << key << "|" << "\t";
-			cout << "|" << value << "|" << endl << endl;
+			cout << "|" << value << "|" << endl;
 		}	
 
 	}
