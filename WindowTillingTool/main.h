@@ -28,6 +28,7 @@ using namespace std;
 #define ID_EB_SIZE		13005
 
 #define TIMER_INTERVAL_MS 100
+#define PROTECT_INTERVAL_MS 1000
 
 
 void initCompoents(HWND hParent);
@@ -39,3 +40,6 @@ void lbClearList(HWND hwnd);
 void cbAddItem(HWND hwnd, char* str);
 void cbClearList(HWND hwnd);
 void popupMenu(HWND hwnd);
+
+void enableTiling();
+void disableTiling();

@@ -10,7 +10,7 @@ HWND hConsoleWnd;
 HWND hWnd;
 HMENU hMenu;
 
-HANDLE hTimer;
+HWINEVENTHOOK hHook;
 
 HWND hCBMonitors;
 HWND hLBWindows;
@@ -23,21 +23,30 @@ HWND hETSize;
 list<CWindow> winlist;
 TileManager* tileManager;
 
-bool bPrintThreadLock = false;
+bool bHookEnabled;
+//bool bPrintThreadLock = false;
 bool bConsolePrint;
-bool isThreadRunning;
 
-
-DWORD WINAPI timerProc(LPVOID interval)
+void WinEventProc(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd,
+	LONG idObject, LONG idChild, DWORD idEventThread, DWORD dwmsEventTime)
 {
-	long interval_ms = (DWORD)interval;
+	if (!hwnd) return;
+	if (idObject != OBJID_WINDOW) return;
 
-	while (true)
+	if (event == EVENT_SYSTEM_MOVESIZEEND
+		|| event == EVENT_SYSTEM_FOREGROUND
+		|| event == EVENT_SYSTEM_MINIMIZEEND
+		|| event == EVENT_SYSTEM_DESKTOPSWITCH
+		|| event == EVENT_OBJECT_CREATE
+		|| event == EVENT_OBJECT_DESTROY
+		|| event == EVENT_OBJECT_HIDE
+		|| event == EVENT_OBJECT_SHOW
+	)
 	{
-		
-		if (!isThreadRunning) return NULL;
+
 		if (tileManager)
 		{
+
 			if (tileManager->refreshWinList())
 			{
 				updateWinListBox();
@@ -46,17 +55,13 @@ DWORD WINAPI timerProc(LPVOID interval)
 			
 			if (bConsolePrint)
 			{
-				bPrintThreadLock = true;	// 线程锁
+				system("cls");
+				// bPrintThreadLock = true;	// 线程锁
 				tileManager->printWinList();
-				bPrintThreadLock = false;
+				// bPrintThreadLock = false;
 			}
-			
 		}
-		Sleep(interval_ms);
-		if (bConsolePrint) system("cls");
 	}
-
-	return NULL;
 }
 
 LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
@@ -68,7 +73,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	{
 		char buf[BUFFER_SIZE];
 
-		bPrintThreadLock = false;
+		//bPrintThreadLock = false;
 
 		hMenu = LoadMenu(mhInstance, MAKEINTRESOURCE(IDR_MENU1));
 
@@ -95,8 +100,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 		}
 
-		isThreadRunning = true;
-		hTimer = CreateThread(NULL, 0, timerProc, (LPVOID)TIMER_INTERVAL_MS, NULL, NULL);
+		enableTiling();
 	}
 		break;
 
@@ -149,14 +153,13 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		}
 		else if (id == IDSM_ENABLE_TILING)
 		{
-			if (isThreadRunning)
+			if (bHookEnabled)
 			{
-				isThreadRunning = false;
+				disableTiling();
 			}
 			else
 			{
-				isThreadRunning = true;
-				hTimer = CreateThread(NULL, 0, timerProc, (LPVOID)TIMER_INTERVAL_MS, NULL, NULL);
+				enableTiling();
 			}
 		}
 		else if (id == IDSM_ENABLE_MOUSETOOL)
@@ -411,7 +414,7 @@ void updateWindowInfo()
 void updateWinListBox()
 {
 	char buf[BUFFER_SIZE];
-	while (bPrintThreadLock);	// 在打印窗口信息时，等待，防止段错误。
+	//while (bPrintThreadLock);	// 在打印窗口信息时，等待，防止段错误。
 
 	tileManager->refreshWinList();
 
@@ -504,7 +507,7 @@ void popupMenu(HWND hwnd)
 	SetForegroundWindow(hwnd);
 	HMENU pMenu = GetSubMenu(hMenu, 0);
 
-	if (isThreadRunning)
+	if (bHookEnabled)
 		CheckMenuItem(pMenu, IDSM_ENABLE_TILING, MF_CHECKED);
 	else
 		CheckMenuItem(pMenu, IDSM_ENABLE_TILING, MF_UNCHECKED);
@@ -521,6 +524,19 @@ void popupMenu(HWND hwnd)
 
 	int ret = TrackPopupMenu(pMenu, TPM_TOPALIGN, p.x, p.y, NULL, hwnd, NULL);
 
+}
+
+void enableTiling()
+{
+	// todo: 更改事件响应范围
+	hHook = SetWinEventHook(EVENT_MIN, EVENT_MAX, NULL,
+		WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT);
+	if (hHook) bHookEnabled = true;
+}
+
+void disableTiling()
+{
+	if (UnhookWinEvent(hHook)) bHookEnabled = false;
 }
 
 int main()
