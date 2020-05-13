@@ -34,7 +34,6 @@ char filter_full[][IGNORE_WND_CLASS_MAX_LEN] = {
 };
 
 char filter_part[][IGNORE_WND_CLASS_MAX_LEN] = {
-	//"HwndWrapper",
 	"#32768",	//	弹出菜单
 	"#32770",	//	弹出的消息框,MessageBox()
 	"#32774",	//	提示弹出文字框
@@ -164,6 +163,15 @@ list<CWindow>::iterator WindowsManager::getItrBegin()
 bool WindowsManager::isItrEnd(list<CWindow>::iterator itr)
 {
 	return itr==mAllWindows.end();
+}
+
+bool WindowsManager::isWinInList(HWND hwnd)
+{
+	for (CWINITR itr = mAllWindows.begin(); itr != mAllWindows.end(); itr++)
+	{
+		if (itr->getHandle() == hwnd) return true;
+	}
+	return false;
 }
 
 void WindowsManager::clearOutdateWindows()

@@ -30,6 +30,15 @@ using namespace std;
 #define TIMER_INTERVAL_MS 100
 #define PROTECT_INTERVAL_MS 1000
 
+// 键盘鼠标hook的宏定义
+#define HOOK_KEY_FUNC VK_LWIN
+#define HOOK_KEY_MOUSETOOL_SWITCH VK_F1
+#define HOOK_KEY_TILE_SWITCH VK_F2
+#define HOOK_KEY_UP 'I'
+#define HOOK_KEY_DOWN 'K'
+#define HOOK_KEY_LEFT 'J'
+#define HOOK_KEY_RIGHT 'L'
+
 
 void initCompoents(HWND hParent);
 void updateWindowInfo();
@@ -42,4 +51,9 @@ void cbClearList(HWND hwnd);
 void popupMenu(HWND hwnd);
 
 void enableTiling();
-void disableTiling();
+void disableTiling(); 
+int initHook(HINSTANCE hInstance);
+void enableMouseTool();
+void disableMouseTool();
+
+void terminateApplication();

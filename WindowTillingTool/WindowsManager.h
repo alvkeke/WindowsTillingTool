@@ -55,6 +55,7 @@ public:
 	list<CWindow>* getWindowList();
 	list<CWindow>::iterator getItrBegin();
 	bool isItrEnd(list<CWindow>::iterator);
+	bool isWinInList(HWND hwnd);
 
 	void clearOutdateWindows();
 

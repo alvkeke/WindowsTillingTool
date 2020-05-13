@@ -67,6 +67,11 @@ bool TileManager::isItrEnd(list<CWindow>::iterator itr)
 	return mWinManager->isItrEnd(itr);
 }
 
+bool TileManager::isWinInList(HWND hwnd)
+{
+	return mWinManager->isWinInList(hwnd);
+}
+
 void TileManager::printWinList()
 {
 	mWinManager->printWindowList();

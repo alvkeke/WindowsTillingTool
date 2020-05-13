@@ -4,13 +4,14 @@
 #include "resource.h"
 #include "BlockSettingWindow.h"
 
+
+
+/*++++++++++Main Window Handle++++++++++++++++++++++++*/
 HINSTANCE mhInstance;
 
 HWND hConsoleWnd;
 HWND hWnd;
 HMENU hMenu;
-
-HWINEVENTHOOK hHook;
 
 HWND hCBMonitors;
 HWND hLBWindows;
@@ -20,12 +21,35 @@ HWND hETHwnd;
 HWND hETPos;
 HWND hETSize;
 
+/*++++++++++MouseTool Hook++++++++++++++++++++++++*/
+// Hook
+HHOOK kHook, mHook;
+
+// 窗口与鼠标信息
+HWND fWin;
+RECT winRect;
+POINT pDown, pNow;
+
+// 当前状态
+bool bMouseToolEnabled;
+bool bIsFuncKeyDown;
+bool bWant2Move;
+bool bWant2Size;
+
+bool bIsFuncKeySet;
+bool bBlockFuncKey;
+
+
+/*++++++++++Tiling Hook++++++++++++++++++++++++*/
+HWINEVENTHOOK wHook;
+bool bAutoTileEnabled;
+//bool bPrintThreadLock = false;
+bool bConsolePrint;
+
+/*++++++++++其他变量++++++++++++++++++++++++*/
 list<CWindow> winlist;
 TileManager* tileManager;
 
-bool bHookEnabled;
-//bool bPrintThreadLock = false;
-bool bConsolePrint;
 
 void WinEventProc(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd,
 	LONG idObject, LONG idChild, DWORD idEventThread, DWORD dwmsEventTime)
@@ -62,6 +86,252 @@ void WinEventProc(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd,
 			}
 		}
 	}
+}
+
+LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+	PKBDLLHOOKSTRUCT kbdata = (PKBDLLHOOKSTRUCT)lParam;
+
+	if (nCode >= 0)
+	{
+		// 所有win键按下时都屏蔽, 其他按键放行
+		if (!bIsFuncKeyDown && kbdata->vkCode == HOOK_KEY_FUNC && (wParam == WM_SYSKEYDOWN || wParam == WM_KEYDOWN))
+		{
+			bIsFuncKeyDown = true;
+			bIsFuncKeySet = false;
+			bWant2Move = false;
+			bWant2Size = false;
+			bBlockFuncKey = false;
+			return 1;
+		}
+		else if (bIsFuncKeyDown)
+		{
+			if (kbdata->vkCode == HOOK_KEY_FUNC)
+			{
+				if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP)
+				{
+
+					if (!bIsFuncKeySet && !bBlockFuncKey)
+					{
+						keybd_event(HOOK_KEY_FUNC, 0, 0, 0);
+						keybd_event(HOOK_KEY_FUNC, 0, KEYEVENTF_KEYUP, 0);
+					}
+					else if (bIsFuncKeySet)
+					{
+						keybd_event(HOOK_KEY_FUNC, 0, KEYEVENTF_KEYUP, 0);
+						bIsFuncKeySet = false;
+					}
+
+					bIsFuncKeyDown = false;
+				}
+			}
+			else if (kbdata->vkCode == HOOK_KEY_MOUSETOOL_SWITCH)
+			{
+				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
+				{
+					bBlockFuncKey = true;
+					//SendMessage(hWnd, WM_CALLBACK_SWITCH, 0, 0);
+					if (bMouseToolEnabled)
+						disableMouseTool();
+					else
+						enableMouseTool();
+				}
+			}
+			else if (kbdata->vkCode == HOOK_KEY_TILE_SWITCH)
+			{
+				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
+				{
+					if (bAutoTileEnabled)
+						disableTiling();
+					else
+						enableTiling();
+				}
+			}
+			else
+			{
+				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
+				{
+					// 只有在第一次按下时设置win键被按下
+
+					bIsFuncKeySet = true;
+					keybd_event(HOOK_KEY_FUNC, 0, 0, 0);
+					keybd_event(kbdata->vkCode, 0, 0, 0);
+				}
+				else if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP)
+				{
+					keybd_event(kbdata->vkCode, 0, KEYEVENTF_KEYUP, 0);
+				}
+			}
+
+			return 1;
+		}
+	}
+
+	return CallNextHookEx(kHook, nCode, wParam, lParam);
+}
+
+LRESULT CALLBACK MouseHookProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+	LPMSLLHOOKSTRUCT mdata = (LPMSLLHOOKSTRUCT)lParam;
+	POINT   pt = mdata->pt;
+
+	if (bMouseToolEnabled && nCode >= 0 && bIsFuncKeyDown)
+	{
+		int newX, newY;
+		int newW, newH;
+		GetCursorPos(&pNow);
+		newX = winRect.left + pNow.x - pDown.x;
+		newY = winRect.top + pNow.y - pDown.y;
+
+		newW = winRect.right - winRect.left + pNow.x - pDown.x;
+		newH = winRect.bottom - winRect.top + pNow.y - pDown.y;
+
+		if (wParam == WM_MBUTTONUP)
+		{
+			bBlockFuncKey = true;
+
+			GetCursorPos(&pDown);
+			fWin = WindowFromPoint(pDown);
+			if (fWin == 0) goto exitl;
+			while (GetParent(fWin)) {
+				fWin = GetParent(fWin);
+			}
+			if (IsZoomed(fWin))
+			{
+				ShowWindow(fWin, SW_SHOWNORMAL);
+			}
+			else
+			{
+				ShowWindow(fWin, SW_MAXIMIZE);
+			}
+
+			return 1;
+		}
+		else if (wParam == WM_MBUTTONDOWN)
+		{
+			// 屏蔽中键按下事件，防止中键被保持按下状态。
+			return 1;
+		}
+		else if (wParam == WM_MOUSEWHEEL)
+		{
+			bBlockFuncKey = true;
+
+			GetCursorPos(&pDown);
+			fWin = WindowFromPoint(pDown);
+			if (fWin == 0) goto exitl;
+			while (GetParent(fWin)) {
+				fWin = GetParent(fWin);
+			}
+			SetFocus(fWin);
+
+			short delta = GET_WHEEL_DELTA_WPARAM(mdata->mouseData);
+			if (delta > 0)
+			{
+				SetWindowPos(fWin, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+			}
+			else
+			{
+				SetWindowPos(fWin, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+			}
+			return 1;
+		}
+		else if (bWant2Move && wParam == WM_MOUSEMOVE)
+		{
+			if (IsZoomed(fWin)) {
+				ShowWindow(fWin, SW_SHOWNORMAL);
+			}
+			SetWindowPos(fWin, 0, newX, newY, 0, 0, SWP_NOSIZE);
+
+		}
+		else if (bWant2Size && wParam == WM_MOUSEMOVE)
+		{
+			if (IsZoomed(fWin)) {
+				ShowWindow(fWin, SW_SHOWNORMAL);
+			}
+			SetWindowPos(fWin, 0, 0, 0, newW, newH, SWP_NOMOVE);
+		}
+		else if (wParam == WM_LBUTTONDOWN)
+		{
+			if (!bWant2Size)
+			{
+				bBlockFuncKey = true;
+
+				GetCursorPos(&pDown);
+				fWin = WindowFromPoint(pDown);
+				if (fWin == 0) goto exitl;
+
+				while (!tileManager->isWinInList(fWin))
+				{
+					fWin = GetParent(fWin);
+				}
+
+				SetFocus(fWin);
+
+				char pname[256];
+				RealGetWindowClass(fWin, pname, 255);
+				//for (int i = 0; i < MarkedClasses.size(); i++) {
+				//	if (MarkedClasses.at(i)._Equal(pname)) goto exitl;
+				//}
+
+				GetWindowRect(fWin, &winRect);
+				bWant2Move = true;
+				if (!strcmp(pname, "Windows.UI.Core.CoreWindow")) bWant2Move = false;
+				//for (int i = 0; i<)
+			}
+
+			return 1;
+		}
+		else if (wParam == WM_RBUTTONDOWN)
+		{
+			if (!bWant2Move)
+			{
+				bBlockFuncKey = true;
+
+				GetCursorPos(&pDown);
+				fWin = WindowFromPoint(pDown);
+				if (fWin == 0) goto exitl;
+
+				//while (GetParent(fWin)) {
+
+				while(!tileManager->isWinInList(fWin))
+				{
+					fWin = GetParent(fWin);
+				}
+
+				SetFocus(fWin);
+
+				char pname[256];
+				RealGetWindowClass(fWin, pname, 255);
+				//for (int i = 0; i < MarkedClasses.size(); i++) {
+				//	if (MarkedClasses.at(i)._Equal(pname)) goto exitl;
+				//}
+
+				GetWindowRect(fWin, &winRect);
+				bWant2Size = true;
+				if (!strcmp(pname, "Windows.UI.Core.CoreWindow")) bWant2Size = false;
+			}
+
+			return 1;
+		}
+		else if (bWant2Move && wParam == WM_LBUTTONUP)
+		{
+			// SetWindowPos(fWin, 0, newX, newY, 0, 0, SWP_NOSIZE);
+			SendMessage(fWin, WM_MOVE, 0, (LPARAM)MAKELONG(newX, newY));
+			bWant2Move = false;
+			return 1;
+		}
+		else if (bWant2Size && wParam == WM_RBUTTONUP)
+		{
+			//SetWindowPos(fWin, 0, 0, 0, newW, newH, SWP_NOMOVE);
+			SendMessage(fWin, WM_SIZE, 0, (LPARAM)MAKELONG(newW, newH));
+			bWant2Size = false;
+			return 1;
+		}
+
+	}
+
+exitl:
+	return CallNextHookEx(mHook, nCode, wParam, lParam);
 }
 
 LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
@@ -116,7 +386,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		if (id == ID_CB_MONITOR)
 		{
-			// if (HIWORD(wparam) == CBN_SELCHANGE)
+			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
 				updateWinListBox();
 			}
@@ -148,12 +418,11 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		}
 		else if (id == IDSM_EXIT)
 		{
-			delTrayIcon();
-			PostQuitMessage(0);
+			terminateApplication();
 		}
 		else if (id == IDSM_ENABLE_TILING)
 		{
-			if (bHookEnabled)
+			if (bAutoTileEnabled)
 			{
 				disableTiling();
 			}
@@ -164,7 +433,10 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		}
 		else if (id == IDSM_ENABLE_MOUSETOOL)
 		{
-
+			if (bMouseToolEnabled)
+				disableMouseTool();
+			else
+				enableMouseTool();
 		}
 		else if (id == IDSM_SHOW_CONSOLE)
 		{
@@ -224,8 +496,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		return true;	//防止窗口被销毁
 		break;
 	case WM_DESTROY:
-		delTrayIcon();
-		PostQuitMessage(0);
+		terminateApplication();
 		break;
 	}
 
@@ -273,6 +544,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInstace, LPSTR args, int a
 	{
 		MessageBox(0, "Create Window Failed.", "ERROR", MB_ICONERROR);
 		return -2;
+	}
+
+	if (initHook(hInstance))
+	{
+		MessageBox(0, "Create Key&Mouse Hook Failed.", "ERROR", MB_ICONERROR);
+		return -3;
 	}
 
 	ShowWindow(hWnd, SW_SHOW);
@@ -507,7 +784,12 @@ void popupMenu(HWND hwnd)
 	SetForegroundWindow(hwnd);
 	HMENU pMenu = GetSubMenu(hMenu, 0);
 
-	if (bHookEnabled)
+	if(bMouseToolEnabled)
+		CheckMenuItem(pMenu, IDSM_ENABLE_MOUSETOOL, MF_CHECKED);
+	else
+		CheckMenuItem(pMenu, IDSM_ENABLE_MOUSETOOL, MF_UNCHECKED);
+
+	if (bAutoTileEnabled)
 		CheckMenuItem(pMenu, IDSM_ENABLE_TILING, MF_CHECKED);
 	else
 		CheckMenuItem(pMenu, IDSM_ENABLE_TILING, MF_UNCHECKED);
@@ -529,14 +811,69 @@ void popupMenu(HWND hwnd)
 void enableTiling()
 {
 	// todo: 更改事件响应范围
-	hHook = SetWinEventHook(EVENT_MIN, EVENT_MAX, NULL,
+	wHook = SetWinEventHook(EVENT_MIN, EVENT_MAX, NULL,
 		WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT);
-	if (hHook) bHookEnabled = true;
+	if (wHook) bAutoTileEnabled = true;
 }
 
 void disableTiling()
 {
-	if (UnhookWinEvent(hHook)) bHookEnabled = false;
+	if (UnhookWinEvent(wHook)) bAutoTileEnabled = false;
+}
+
+int initHook(HINSTANCE hInstance)//, HWND hWnd)
+{
+	bMouseToolEnabled = true;
+	bIsFuncKeyDown = false;
+	bWant2Move = false;
+	bWant2Size = false;
+	bIsFuncKeySet = false;
+	bBlockFuncKey = false;
+
+	kHook = SetWindowsHookEx(
+		WH_KEYBOARD_LL,
+		KeyHookProc,
+		hInstance,
+		0
+	);
+
+	mHook = SetWindowsHookEx(
+		WH_MOUSE_LL,
+		MouseHookProc,
+		hInstance,
+		0
+	);
+
+	if (kHook == NULL)
+	{
+		return 1;
+	}
+
+	if (mHook == NULL)
+	{
+		return 1;
+	}
+
+	return 0;
+}
+
+void enableMouseTool()
+{
+	bMouseToolEnabled = true;
+}
+
+void disableMouseTool()
+{
+	bMouseToolEnabled = false;
+}
+
+void terminateApplication()
+{
+	delTrayIcon();
+	UnhookWinEvent(wHook);
+	UnhookWindowsHookEx(kHook);
+	UnhookWindowsHookEx(mHook);
+	PostQuitMessage(0);
 }
 
 int main()

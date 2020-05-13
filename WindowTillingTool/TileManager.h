@@ -26,6 +26,7 @@ public:
 	list<CWindow> getWinListInScn(int imonitor);
 	list<CWindow>::iterator getWinListItr();
 	bool isItrEnd(list<CWindow>::iterator itr);
+	bool isWinInList(HWND hwnd);
 
 	void printWinList();
 
