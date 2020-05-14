@@ -343,6 +343,7 @@ void TileManager::tileWindows()
 
 		if (nWindows == 0)
 		{
+			mon++;
 			continue;
 		}
 		else if (nWindows == 1)
