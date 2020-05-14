@@ -32,12 +32,19 @@ using namespace std;
 
 // 键盘鼠标hook的宏定义
 #define HOOK_KEY_FUNC VK_LWIN
-#define HOOK_KEY_MOUSETOOL_SWITCH VK_F1
-#define HOOK_KEY_TILE_SWITCH VK_F2
-#define HOOK_KEY_UP 'I'
-#define HOOK_KEY_DOWN 'K'
-#define HOOK_KEY_LEFT 'J'
-#define HOOK_KEY_RIGHT 'L'
+#define HOOK_KEY_MOUSETOOL_SWITCH VK_F2
+#define HOOK_KEY_TILE_SWITCH VK_F1
+#define HOOK_KEY_FULLWINDOW 'F'
+
+//#define HOOK_KEY_UP 'I'
+//#define HOOK_KEY_DOWN 'K'
+//#define HOOK_KEY_LEFT 'J'
+//#define HOOK_KEY_RIGHT 'L'
+
+#define HOOK_KEY_UP VK_UP
+#define HOOK_KEY_DOWN VK_DOWN
+#define HOOK_KEY_LEFT VK_LEFT
+#define HOOK_KEY_RIGHT VK_RIGHT
 
 
 void initCompoents(HWND hParent);

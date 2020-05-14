@@ -21,6 +21,7 @@ public:
 private:
 	HMONITOR hMonitor;
 };
+typedef list<CMonitor>::iterator CMONITR;
 
 class MonitorManager
 {

@@ -6,6 +6,8 @@
 
 using namespace std;
 
+#define VALUE_NOTFOUND_STRING "key=none&value=none"
+
 class INIItem {
 public:
 	INIItem(string key, string value);

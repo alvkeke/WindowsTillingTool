@@ -87,9 +87,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="icon.png">
-      <Filter>资源文件</Filter>
-    </Image>
     <Image Include="icon.ico">
       <Filter>资源文件</Filter>
     </Image>

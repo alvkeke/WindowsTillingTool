@@ -3,7 +3,11 @@
 
 INIItem::INIItem(string key, string value)
 {
-	mKey = key;
+	if (key.empty())
+		mKey = "none";
+	else
+		mKey = key;
+
 	mValue = value;
 }
 
@@ -34,7 +38,9 @@ void INISection::addItem(INIItem item)
 
 void INISection::addItem(string key, string value)
 {
-	mItems.push_back(*new INIItem(key, value));
+	// 需不需要做存在判断？
+	if (!key.empty())
+		mItems.push_back(*new INIItem(key, value));
 }
 
 string INISection::getValue(string key)
@@ -48,7 +54,7 @@ string INISection::getValue(string key)
 		}
 	}
 
-	return NULL;
+	return "";
 }
 
 string INISection::getKey(int index)
@@ -59,7 +65,7 @@ string INISection::getKey(int index)
 		advance(itr, index);
 		return itr->getKey();
 	}
-	return NULL;
+	return "";
 }
 
 string INISection::getValue(int index)
@@ -70,7 +76,7 @@ string INISection::getValue(int index)
 		advance(itr, index);
 		return itr->getValue();
 	}
-	return NULL;
+	return VALUE_NOTFOUND_STRING;
 }
 
 ITEMITR INISection::getItemItr()
@@ -131,6 +137,8 @@ void INIHandler::praseFile(string filename)
 			value = sline.substr(pos);
 			pos--;
 			key = sline.substr(0, pos);
+			
+			if (key.empty()) continue;	// 键值无论如何都不能为空
 
 			// 清除两端无用空格
 			if (!value.empty())
@@ -138,11 +146,10 @@ void INIHandler::praseFile(string filename)
 				while (value[0] == ' ')value = value.substr(1);
 				while (value[value.size() - 1] == ' ') value = value.substr(0, value.size() - 1);
 			}
-			if (!key.empty())
-			{
-				while (key[0] == ' ')key = key.substr(1);
-				while (key[key.size() - 1] == ' ') key = key.substr(0, key.size() - 1);
-			}
+
+			while (key[0] == ' ')key = key.substr(1);
+			while (key[key.size() - 1] == ' ') key = key.substr(0, key.size() - 1);
+			
 			addItem(section, key, value);
 
 			cout << "|" << key << "|" << "\t";
@@ -195,6 +202,11 @@ void INIHandler::overwiteFile(string filename)
 
 void INIHandler::addSection(string sectionName)
 {
+	for (SECTIONITR itr = mSections.begin(); itr != mSections.end(); itr++)
+	{
+		// 已存在，不添加
+		if (sectionName == itr->getSectionName()) return;
+	}
 	mSections.push_back(*new INISection(sectionName));
 }
 

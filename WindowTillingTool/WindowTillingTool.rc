@@ -59,6 +59,8 @@ BEGIN
         MENUITEM "显示控制台",                       IDSM_SHOW_CONSOLE
         MENUITEM "启用控制台输出",                     IDSM_ENABLE_CONSOLE_OUTPUT
         MENUITEM SEPARATOR
+        MENUITEM "重新加载配置",                      40014
+        MENUITEM SEPARATOR
         MENUITEM "退出",                          IDSM_EXIT
     END
     POPUP "lsitpop"

@@ -143,10 +143,51 @@ LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 			{
 				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
 				{
+					bBlockFuncKey = true;
 					if (bAutoTileEnabled)
 						disableTiling();
 					else
 						enableTiling();
+				}
+			}
+			else if (kbdata->vkCode == HOOK_KEY_FULLWINDOW)
+			{
+				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
+				{
+					bBlockFuncKey = true;
+					//tileManager->setFullWin()
+				}
+			}
+			else if (kbdata->vkCode == HOOK_KEY_UP)
+			{
+				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
+				{
+					bBlockFuncKey = true;
+				}
+			}
+			else if (kbdata->vkCode == HOOK_KEY_DOWN)
+			{
+				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
+				{
+					bBlockFuncKey = true;
+				}
+			}
+			else if (kbdata->vkCode == HOOK_KEY_LEFT)
+			{
+				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
+				{
+					bBlockFuncKey = true;
+					tileManager->moveFocusWindowLeft();
+					tileManager->tileWindows();
+				}
+			}
+			else if (kbdata->vkCode == HOOK_KEY_RIGHT)
+			{
+				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
+				{
+					bBlockFuncKey = true;
+					tileManager->moveFocusWindowRight();
+					tileManager->tileWindows();
 				}
 			}
 			else
@@ -267,18 +308,15 @@ LRESULT CALLBACK MouseHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 					fWin = GetParent(fWin);
 				}
 
-				SetFocus(fWin);
+				SetForegroundWindow(fWin);
 
 				char pname[256];
 				RealGetWindowClass(fWin, pname, 255);
-				//for (int i = 0; i < MarkedClasses.size(); i++) {
-				//	if (MarkedClasses.at(i)._Equal(pname)) goto exitl;
-				//}
 
 				GetWindowRect(fWin, &winRect);
 				bWant2Move = true;
 				if (!strcmp(pname, "Windows.UI.Core.CoreWindow")) bWant2Move = false;
-				//for (int i = 0; i<)
+
 			}
 
 			return 1;
@@ -293,14 +331,12 @@ LRESULT CALLBACK MouseHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 				fWin = WindowFromPoint(pDown);
 				if (fWin == 0) goto exitl;
 
-				//while (GetParent(fWin)) {
-
 				while(!tileManager->isWinInList(fWin))
 				{
 					fWin = GetParent(fWin);
 				}
 
-				SetFocus(fWin);
+				SetForegroundWindow(fWin);
 
 				char pname[256];
 				RealGetWindowClass(fWin, pname, 255);
@@ -355,10 +391,6 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		tileManager = new TileManager(hWnd);
 		tileManager->addTextBlock(APP_TITLE_CONSOLE);
-		/*
-		tileManager->addClassBlock(APP_WIN_CLASS_MAIN);
-		tileManager->addClassBlock(APP_WIN_CLASS_BLOCK);
-		*/
 
 		for (int i = 0; i < tileManager->getScnCount(); i++)
 		{
@@ -426,6 +458,13 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		else if (id == IDSM_EXIT)
 		{
 			terminateApplication();
+		}
+		else if (id == IDSM_RELOADDATA)
+		{
+			iniHandler->clearAllData();
+			tileManager->clearAllBlock();
+			loadConfiguration();
+			tileManager->tileWindows();
 		}
 		else if (id == IDSM_ENABLE_TILING)
 		{
@@ -553,9 +592,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInstace, LPSTR args, int a
 		return -2;
 	}
 
-	if (initHook(hInstance))
+	int ret = initHook(hInstance);
+	if (ret == 1)
 	{
-		MessageBox(0, "Create Key&Mouse Hook Failed.", "ERROR", MB_ICONERROR);
+		MessageBox(0, "Create Key Hook Failed.", "ERROR", MB_ICONERROR);
+		return -3;
+	}
+	else if (ret == 2)
+	{
+		MessageBox(0, "Create Mouse Hook Failed.", "ERROR", MB_ICONERROR);
 		return -3;
 	}
 
@@ -826,8 +871,12 @@ void loadConfiguration()
 	{
 		string spx = sec->getValue(SC_TILE_PADDINGX);
 		string spy = sec->getValue(SC_TILE_PADDINGY);
-		int px = atoi(spx.c_str());
-		int py = atoi(spy.c_str());
+		int px = -1;
+		int py = -1;
+		if (!spx.empty()) px = atoi(spx.c_str());
+		if (!spy.empty()) py = atoi(spy.c_str());
+
+		// -1为不更改
 		tileManager->setTilePadding(px, py);
 	}
 
@@ -915,7 +964,7 @@ int initHook(HINSTANCE hInstance)//, HWND hWnd)
 
 	if (mHook == NULL)
 	{
-		return 1;
+		return 2;
 	}
 
 	disableMouseTool();
@@ -955,6 +1004,32 @@ int main()
 
 	 HINSTANCE hinstance = GetModuleHandle(0);
 	 WinMain(hinstance, 0, NULL, 0);
+
+	 //list<int> l1;
+	 //for (int i = 0; i < 10; i++)
+	 //{
+		// l1.push_back(i);
+	 //}
+
+	 //list<int>::iterator itr, itr2;
+	 //for (itr = l1.begin(); itr != l1.end(); itr++)
+	 //{
+		// cout << *itr << endl;
+	 //}
+
+	 //itr = l1.begin();
+	 //itr2 = l1.begin();
+	 //advance(itr, 4);
+	 //advance(itr2, 5);
+	 //swap(*itr, *itr2);
+
+	 //cout << endl << endl;
+	 //for (itr = l1.begin(); itr != l1.end(); itr++)
+	 //{
+		// cout << *itr << endl;
+	 //}
+
+
 
 	return 0;
 }
