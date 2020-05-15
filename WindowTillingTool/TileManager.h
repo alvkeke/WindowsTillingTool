@@ -10,6 +10,10 @@ using namespace std;
 #define WINDOW_PADDING_X 10
 #define WINDOW_PADDING_Y 10
 
+#define WINDOW_Z_TILE HWND_NOTOPMOST
+#define WINDOW_Z_FLOAT HWND_TOPMOST
+#define WINDOW_Z_FULL HWND_TOP
+
 class TileWinInfo {
 
 public:
@@ -23,13 +27,10 @@ public:
 	bool isUserSetMaxed();
 	void usersetMaxed(bool foo);
 
-	//void indexChanged();
-
 	void move(int, int, int, int);
 
 private:
 	HWND mhWnd;
-	//bool mPosChanged;
 	bool mIsUserSetMaxed;
 	int mOldX, mOldY, mOldW, mOldH;
 	bool mOldZoomedState;
@@ -91,17 +92,20 @@ public:
 	void printWinList();
 
 	void toggleWinTmpFull(HWND hwnd);
+	void toggleWinFloat(HWND hwnd);
 
 	void addClassBlock(string classname);
 	void addTextBlock(string text);
 	void addBothBlock(string classname, string text);
 	void addHwndBlock(HWND hwnd);
+	void delHwndBlock(HWND hwnd);
+	void delHwndBlock(int index);
 	void addClassPartBlock(string classname);
 	void addTextPartBlock(string text);
 
 	void clearAllBlock();
 
-	bool checkBlock(CWINITR itr);
+	bool isWindowBlocked(CWindow* itr);
 
 	void moveFocusWindowLeft();
 	void moveFocusWindowRight();

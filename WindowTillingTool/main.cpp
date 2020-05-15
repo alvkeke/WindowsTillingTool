@@ -38,6 +38,7 @@ bool bWant2Move;
 bool bWant2Size;
 
 bool bIsFuncKeySet;
+bool bIsAssistKeyDown;
 bool bBlockFuncKey;
 
 
@@ -101,6 +102,7 @@ LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 		{
 			bIsFuncKeyDown = true;
 			bIsFuncKeySet = false;
+			bIsAssistKeyDown = false;
 			bWant2Move = false;
 			bWant2Size = false;
 			bBlockFuncKey = false;
@@ -124,7 +126,20 @@ LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 						bIsFuncKeySet = false;
 					}
 
+					bIsAssistKeyDown = false;
 					bIsFuncKeyDown = false;
+				}
+			}
+			else if (kbdata->vkCode == HOOK_KEY_ASSIST)
+			{
+				bBlockFuncKey = true;
+				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
+				{
+					bIsAssistKeyDown = true;
+				}
+				else if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP)
+				{
+					bIsAssistKeyDown = false;
 				}
 			}
 			else if (kbdata->vkCode == HOOK_KEY_MOUSETOOL_SWITCH)
@@ -157,8 +172,15 @@ LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 				bBlockFuncKey = true;
 				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
 				{
-					//tileManager->setFullWin();
 					tileManager->toggleWinTmpFull(GetForegroundWindow());
+				}
+			}
+			else if (bIsAssistKeyDown && kbdata->vkCode == HOOK_KEY_FLOATWINDOW)
+			{
+				bBlockFuncKey = true;
+				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
+				{
+					tileManager->toggleWinFloat(GetForegroundWindow());
 				}
 			}
 			else if (kbdata->vkCode == HOOK_KEY_UP)
@@ -166,6 +188,12 @@ LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 				bBlockFuncKey = true;
 				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
 				{
+					if (bIsAssistKeyDown)
+					{
+					}
+					else
+					{
+					}
 				}
 			}
 			else if (kbdata->vkCode == HOOK_KEY_DOWN)
@@ -173,26 +201,45 @@ LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 				bBlockFuncKey = true;
 				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
 				{
+					if (bIsAssistKeyDown)
+					{
+					}
+					else
+					{
+					}
 				}
 			}
 			else if (kbdata->vkCode == HOOK_KEY_LEFT)
 			{
 				bBlockFuncKey = true;
+
 				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
 				{
-					
-					tileManager->moveFocusWindowLeft();
-					tileManager->tileWindows();
+					if (bIsAssistKeyDown)
+					{
+						tileManager->moveFocusWindowLeft();
+						tileManager->tileWindows();
+					}
+					else
+					{
+					}
 				}
+
 			}
 			else if (kbdata->vkCode == HOOK_KEY_RIGHT)
 			{
 				bBlockFuncKey = true;
+
 				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
 				{
-					
-					tileManager->moveFocusWindowRight();
-					tileManager->tileWindows();
+					if (bIsAssistKeyDown)
+					{
+						tileManager->moveFocusWindowRight();
+						tileManager->tileWindows();
+					}
+					else
+					{
+					}
 				}
 			}
 			else
@@ -288,7 +335,7 @@ LRESULT CALLBACK MouseHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 			if (IsZoomed(fWin)) {
 				ShowWindow(fWin, SW_SHOWNORMAL);
 			}
-			SetWindowPos(fWin, 0, newX, newY, 0, 0, SWP_NOSIZE);
+			SetWindowPos(fWin, 0, newX, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 
 		}
 		else if (bWant2Size && wParam == WM_MOUSEMOVE)
@@ -296,7 +343,7 @@ LRESULT CALLBACK MouseHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 			if (IsZoomed(fWin)) {
 				ShowWindow(fWin, SW_SHOWNORMAL);
 			}
-			SetWindowPos(fWin, 0, 0, 0, newW, newH, SWP_NOMOVE);
+			SetWindowPos(fWin, 0, 0, 0, newW, newH, SWP_NOMOVE | SWP_NOZORDER);
 		}
 		else if (wParam == WM_LBUTTONDOWN)
 		{

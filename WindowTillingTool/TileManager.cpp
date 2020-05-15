@@ -90,11 +90,16 @@ void TileManager::toggleWinTmpFull(HWND hwnd)
 {
 	int iMon = mMonManager->monitorFromWindow(hwnd);
 	TileScnInfo* scn = getScnInfo(iMon);
+
+	delHwndBlock(hwnd);
+
 	if (scn->isAnyWinSetFull())
 	{
 		if (!scn->wasWinSetFull(hwnd))
 		{
 			scn->cancelFullWin();
+			if (scn->indexWin(hwnd) < 0) scn->addWin(hwnd);
+			
 			scn->setFullWin(hwnd);
 		}
 		else
@@ -104,9 +109,43 @@ void TileManager::toggleWinTmpFull(HWND hwnd)
 	}
 	else
 	{
+		if (scn->indexWin(hwnd) < 0) scn->addWin(hwnd);
+		
 		scn->setFullWin(hwnd);
 	}
 	tileWindows();
+
+}
+
+void TileManager::toggleWinFloat(HWND hwnd)
+{
+	list<HWND>::iterator it = mHwndBlockList.begin();
+	for (; it != mHwndBlockList.end(); it++)
+	{
+		if (*it == hwnd)
+		{
+			mHwndBlockList.erase(it);
+			tileWindows();
+			return;
+		}
+	}
+
+ 	mHwndBlockList.push_back(hwnd);	
+	// 如果窗口被强制放大了，故删除放大标志
+	TILESCNITR itr = mScnInfo.begin();
+	for (; itr != mScnInfo.end(); itr++)
+	{
+		if (itr->indexWin(hwnd) < 0)continue;
+		if (itr->wasWinSetFull(hwnd))
+		{
+			itr->cancelFullWin();
+		}
+		break;
+	}
+	tileWindows();	//必须要在删除标准之后进行，否则会出问题
+	ShowWindow(hwnd, SW_NORMAL);
+	SetWindowPos(hwnd, WINDOW_Z_FLOAT, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
+	SetForegroundWindow(hwnd);
 }
 
 void TileManager::addClassBlock(string classname)
@@ -130,6 +169,27 @@ void TileManager::addHwndBlock(HWND hwnd)
 	mHwndBlockList.push_back(hwnd);
 }
 
+void TileManager::delHwndBlock(HWND hwnd)
+{
+	list<HWND>::iterator it = mHwndBlockList.begin();
+	for (; it != mHwndBlockList.end(); it++)
+	{
+		if (*it == hwnd)
+		{
+			mHwndBlockList.erase(it);
+			return;
+		}
+	}
+}
+
+void TileManager::delHwndBlock(int index)
+{
+	list<HWND>::iterator it = mHwndBlockList.begin();
+	if (index >= mHwndBlockList.size()) return;
+	advance(it, index);
+	mHwndBlockList.erase(it);
+}
+
 void TileManager::addClassPartBlock(string classname)
 {
 	mClassPartBlockList.push_back(classname);
@@ -151,7 +211,7 @@ void TileManager::clearAllBlock()
 	mHwndBlockList.clear();
 }
 
-bool TileManager::checkBlock(CWINITR itr)
+bool TileManager::isWindowBlocked(CWindow* itr)
 {
 	char buffer[BUFFER_SIZE];
 
@@ -229,7 +289,6 @@ bool TileManager::checkBlock(CWINITR itr)
 		itrtext++;
 	}
 	
-
 	return false;
 }
 
@@ -293,21 +352,27 @@ void TileManager::assignWinInfoList()
 
 	// 清除失效数据
 	int iScn = 0;
+	CWindow* pwin;
 	for (TILESCNITR scnInfoIt = mScnInfo.begin(); scnInfoIt != mScnInfo.end(); scnInfoIt++)
 	{
 		for (TILEWINITR winInfoIt = scnInfoIt->getWinInfoItr(); 
 			!scnInfoIt->isItrEnd(winInfoIt); winInfoIt++)
 		{
+			pwin = new CWindow(winInfoIt->getHandle());
 			if (!IsWindow(winInfoIt->getHandle())
-				|| iScn != mMonManager->monitorFromWindow(winInfoIt->getHandle())
+				|| !IsWindowVisible(winInfoIt->getHandle())
 				|| IsIconic(winInfoIt->getHandle())
-				|| !IsWindowVisible(winInfoIt->getHandle()))
+				|| iScn != mMonManager->monitorFromWindow(winInfoIt->getHandle())
+				|| isWindowBlocked(pwin)
+			)
 			{
 				 winInfoIt = scnInfoIt->delWin(winInfoIt);
 
 				 if(winInfoIt != scnInfoIt->getWinInfoItr()) winInfoIt--;
 				 if (scnInfoIt->isItrEnd(winInfoIt)) break;
 			}
+
+			delete pwin;
 		}
 
 		iScn++;
@@ -317,7 +382,7 @@ void TileManager::assignWinInfoList()
 	for (CWINITR winIt = mWinManager->getItrBegin(); !mWinManager->isItrEnd(winIt); winIt++)
 	{
 		if (!winIt->isNormalShow()) continue;
-		if (checkBlock(winIt)) continue;
+		if (isWindowBlocked(&(*winIt))) continue;
 
 		int iScn = mMonManager->monitorFromWindow(winIt->getHandle());
 		TileScnInfo* scninfo = getScnInfo(iScn);
@@ -328,81 +393,6 @@ void TileManager::assignWinInfoList()
 	}
 
 }
-
-//void TileManager::tileWindows2()
-//{
-//	int n_monitor = mMonManager->getMonitorCount();
-//
-//	int* n_window = new int[n_monitor];
-//	int* winw = new int[n_monitor];
-//	int* winh = new int[n_monitor];
-//	int* biasy = new int[n_monitor];
-//	int* biasx = new int[n_monitor];
-//	int* add = new int[n_monitor];
-//
-//	// 显示器
-//	for (int i = 0; i < n_monitor; i++)
-//	{
-//		n_window[i] = 0;
-//		// 获取每个屏幕的起点。
-//		biasy[i] = mMonManager->getMonitor(i)->getClientTop() + mPaddingY;
-//		biasx[i] = mMonManager->getMonitor(i)->getClientLeft() + mPaddingX;
-//	}
-//
-//	// 窗口第一次
-//	list<CWindow>::iterator itr;
-//	for (itr = mWinManager->getItrBegin(); !mWinManager->isItrEnd(itr); itr++)
-//	{
-//		// 获取每个显示器中窗口的个数
-//		int n = mMonManager->monitorFromWindow(itr->getHandle());
-//		if (n < 0 || n >= n_monitor) continue;	// 数据与已有数据不符，则跳过
-//		if (!itr->isNormalShow()) continue;	//窗口并不处于正常显示状态
-//		if (checkBlock(itr)) continue;
-//
-//		n_window[n]++;
-//	}
-//
-//	// 显示器第二次
-//	for (int i = 0; i < n_monitor; i++)
-//	{
-//		// 如果某个显示器下的窗口数量为0，则跳过该显示器。
-//		if (n_window[i] == 0) continue;
-//		winh[i] = mMonManager->getClientHeight(i);
-//		winw[i] = mMonManager->getClientWidth(i);
-//		add[i] = (winw[i] - mPaddingX) / n_window[i];
-//		winh[i] -= mPaddingY * 2;
-//		winw[i] = add[i] - mPaddingX;
-//	}
-//
-//	// 窗口第二次，根据已有数据，调整窗口大小与位置。
-//	for (itr = mWinManager->getItrBegin(); !mWinManager->isItrEnd(itr); itr++)
-//	{
-//		HWND hw = itr->getHandle();
-//		int n = mMonManager->monitorFromWindow(hw);
-//		if (n < 0 || n >= n_monitor) continue;	// 数据与已有数据不符，则跳过
-//		if (!itr->isNormalShow()) continue;	//窗口并不处于正常显示状态
-//		if (n_window[n] == 0) continue;	// 显示器下无窗口，跳过该显示器
-//		if (checkBlock(itr)) continue;
-//
-//		if (n_window[n] == 1)
-//		{
-//			ShowWindow(hw, SW_MAXIMIZE);
-//			continue;
-//		}
-//		ShowWindow(hw, SW_NORMAL);
-//		MoveWindow(hw, biasx[n], biasy[n], winw[n], winh[n], true);
-//		biasx[n] += add[n];
-//	}
-//
-//	delete[] n_window;
-//	delete[] winw;
-//	delete[] winh;
-//	delete[] biasy;
-//	delete[] biasx;
-//	delete[] add;
-//
-//	return;
-//}
 
 void TileManager::tileWindows()
 {
@@ -469,7 +459,6 @@ TileWinInfo::TileWinInfo(HWND hwnd)
 	mSetHei = -1;
 	mOldX = mOldY = mOldW = mOldH = -1;
 	mOldZoomedState = false;
-	//mPosChanged = false;
 }
 
 HWND TileWinInfo::getHandle()
@@ -504,7 +493,7 @@ bool TileWinInfo::isDataChanged()
 {
 	RECT r;
 
-	//if (mPosChanged) return true;
+	if (mOldZoomedState) return false;
 	GetWindowRect(mhWnd, &r);
 	if (r.left != mOldX) return true;
 	if (r.top != mOldY) return true;
@@ -535,22 +524,17 @@ void TileWinInfo::usersetMaxed(bool foo)
 	mIsUserSetMaxed = foo;
 }
 
-//void TileWinInfo::indexChanged()
-//{
-//	mPosChanged = true;
-//}
-
 void TileWinInfo::move(int x, int y, int w, int h)
 {
 	if (mIsUserSetMaxed)
 	{
-		SetWindowPos(mhWnd, HWND_TOPMOST, x, y, w, h, SWP_NOMOVE|SWP_NOSIZE);
+		SetWindowPos(mhWnd, WINDOW_Z_FULL, x, y, w, h, SWP_NOMOVE|SWP_NOSIZE);
 		ShowWindow(mhWnd, SW_MAXIMIZE);
 	}
 	else
 	{
 		ShowWindow(mhWnd, SW_SHOWNORMAL);
-		SetWindowPos(mhWnd, HWND_BOTTOM, x, y, w, h, NULL);
+		SetWindowPos(mhWnd, WINDOW_Z_TILE, x, y, w, h, NULL);
 	}
 }
 
