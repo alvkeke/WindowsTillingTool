@@ -86,6 +86,29 @@ void TileManager::printWinList()
 	mWinManager->printWindowList();
 }
 
+void TileManager::toggleWinTmpFull(HWND hwnd)
+{
+	int iMon = mMonManager->monitorFromWindow(hwnd);
+	TileScnInfo* scn = getScnInfo(iMon);
+	if (scn->isAnyWinSetFull())
+	{
+		if (!scn->wasWinSetFull(hwnd))
+		{
+			scn->cancelFullWin();
+			scn->setFullWin(hwnd);
+		}
+		else
+		{
+			scn->cancelFullWin();
+		}
+	}
+	else
+	{
+		scn->setFullWin(hwnd);
+	}
+	tileWindows();
+}
+
 void TileManager::addClassBlock(string classname)
 {
 	mClassBlockList.push_back(classname);
@@ -420,8 +443,9 @@ void TileManager::tileWindows()
 
 			for (TILEWINITR win = itr->getWinInfoItr(); !itr->isItrEnd(win); win++)
 			{
-
-				if (win->isDataDifferent(false, biasx, biasy, winwid, winhei)
+				
+				if (win->isDataDifferent(itr->wasWinSetFull(win->getHandle()), 
+					biasx, biasy, winwid, winhei)
 					|| win->isDataChanged())
 				{
 					win->move(biasx, biasy, winwid, winhei);
@@ -520,20 +544,20 @@ void TileWinInfo::move(int x, int y, int w, int h)
 {
 	if (mIsUserSetMaxed)
 	{
-		SetWindowPos(mhWnd, HWND_TOPMOST, x, y, w, h, NULL);
+		SetWindowPos(mhWnd, HWND_TOPMOST, x, y, w, h, SWP_NOMOVE|SWP_NOSIZE);
 		ShowWindow(mhWnd, SW_MAXIMIZE);
 	}
 	else
 	{
 		ShowWindow(mhWnd, SW_SHOWNORMAL);
-		SetWindowPos(mhWnd, HWND_NOTOPMOST, x, y, w, h, NULL);
+		SetWindowPos(mhWnd, HWND_BOTTOM, x, y, w, h, NULL);
 	}
 }
 
 TileScnInfo::TileScnInfo(HMONITOR hscn)
 {
 	mhScn = hscn;
-	mFullWin = -1;
+	mIndexFullWin = -1;
 	mWins.clear();
 }
 
@@ -640,14 +664,42 @@ void TileScnInfo::stepWinRight(HWND hwnd)
 	}
 }
 
+bool TileScnInfo::wasWinSetFull(HWND hwnd)
+{
+	return mIndexFullWin == indexWin(hwnd);
+}
+
+bool TileScnInfo::wasWinSetFull(int index)
+{
+	return index == mIndexFullWin;
+}
+
 void TileScnInfo::setFullWin(HWND hwnd)
 {
-	mFullWin = indexWin(hwnd);
+	TILEWINITR itr;
+	if (mIndexFullWin >= 0)return;	// ±£»¤
+	for (itr = mWins.begin(); itr != mWins.end(); itr++)
+	{
+		if (itr->getHandle() == hwnd)
+		{
+			itr->usersetMaxed(true);
+			mIndexFullWin = indexWin(hwnd);
+			return;
+		}
+	}
 }
 
 void TileScnInfo::cancelFullWin()
 {
-	mFullWin = -1;
+	TILEWINITR itr = mWins.begin();
+	advance(itr, mIndexFullWin);
+	itr->usersetMaxed(false);
+	mIndexFullWin = -1;
+}
+
+bool TileScnInfo::isAnyWinSetFull()
+{
+	return mIndexFullWin >= 0;
 }
 
 TILEWINITR TileScnInfo::getWinInfoItr()

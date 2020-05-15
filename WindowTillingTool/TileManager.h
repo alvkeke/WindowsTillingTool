@@ -53,14 +53,18 @@ public:
 
 	void stepWinLeft(HWND hwnd);
 	void stepWinRight(HWND hwnd);
+
+	bool wasWinSetFull(HWND hwnd);
+	bool wasWinSetFull(int index);
 	void setFullWin(HWND hwnd);
 	void cancelFullWin();
+	bool isAnyWinSetFull();
 
 	TILEWINITR getWinInfoItr();
 	bool isItrEnd(TILEWINITR itr);
 
 private:
-	int mFullWin;
+	int mIndexFullWin;
 	list<TileWinInfo> mWins;
 	HMONITOR mhScn;
 };
@@ -85,6 +89,8 @@ public:
 	bool isWinInList(HWND hwnd);
 
 	void printWinList();
+
+	void toggleWinTmpFull(HWND hwnd);
 
 	void addClassBlock(string classname);
 	void addTextBlock(string text);

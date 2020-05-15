@@ -129,9 +129,10 @@ LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 			}
 			else if (kbdata->vkCode == HOOK_KEY_MOUSETOOL_SWITCH)
 			{
+				bBlockFuncKey = true;
 				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
 				{
-					bBlockFuncKey = true;
+					
 					//SendMessage(hWnd, WM_CALLBACK_SWITCH, 0, 0);
 					if (bMouseToolEnabled)
 						disableMouseTool();
@@ -141,9 +142,10 @@ LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 			}
 			else if (kbdata->vkCode == HOOK_KEY_TILE_SWITCH)
 			{
+				bBlockFuncKey = true;
 				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
 				{
-					bBlockFuncKey = true;
+					
 					if (bAutoTileEnabled)
 						disableTiling();
 					else
@@ -152,40 +154,43 @@ LRESULT CALLBACK KeyHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 			}
 			else if (kbdata->vkCode == HOOK_KEY_FULLWINDOW)
 			{
+				bBlockFuncKey = true;
 				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
 				{
-					bBlockFuncKey = true;
-					//tileManager->setFullWin()
+					//tileManager->setFullWin();
+					tileManager->toggleWinTmpFull(GetForegroundWindow());
 				}
 			}
 			else if (kbdata->vkCode == HOOK_KEY_UP)
 			{
+				bBlockFuncKey = true;
 				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
 				{
-					bBlockFuncKey = true;
 				}
 			}
 			else if (kbdata->vkCode == HOOK_KEY_DOWN)
 			{
+				bBlockFuncKey = true;
 				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
 				{
-					bBlockFuncKey = true;
 				}
 			}
 			else if (kbdata->vkCode == HOOK_KEY_LEFT)
 			{
+				bBlockFuncKey = true;
 				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
 				{
-					bBlockFuncKey = true;
+					
 					tileManager->moveFocusWindowLeft();
 					tileManager->tileWindows();
 				}
 			}
 			else if (kbdata->vkCode == HOOK_KEY_RIGHT)
 			{
+				bBlockFuncKey = true;
 				if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
 				{
-					bBlockFuncKey = true;
+					
 					tileManager->moveFocusWindowRight();
 					tileManager->tileWindows();
 				}
