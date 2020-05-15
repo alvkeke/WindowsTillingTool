@@ -9,7 +9,7 @@
 
 #define APP_WIN_CLASS_BLOCK "WinTool_Window_Class_Block"
 
-#define BUFFER_SIZE 100
+#define BUFFER_SIZE 256
 
 
 #define INI_FILE_NAME	"wtiletool.ini"
@@ -23,7 +23,11 @@
 
 #define SECNAME_TEXT_BLOCK_LIST "Text Block List"
 
+#define SECNAME_CLASS_PART_BLOCK_LIST "Class Part Block List"
 
+#define SECNAME_TEXT_PART_BLOCK_LIST "Text Block List"
+
+#define SECNAME_BOTH_BLOCK_LIST "Both Block List"
 
 void ReadjustWindow(HWND hWnd, int nWidth, int nHeight);
 

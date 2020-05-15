@@ -524,6 +524,10 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	}
 		break;
 
+	case WM_BLOCK_BOTH_CALLBACK:
+		tileAddBothBlock(*new string((LPSTR)wparam), *new string((LPSTR)lparam));
+		break;
+
 	case MSG_TRAYICON:
 	{
 		if (lparam == WM_LBUTTONDBLCLK)
@@ -900,6 +904,37 @@ void loadConfiguration()
 		}
 	}
 
+	sec = iniHandler->getSection(SECNAME_TEXT_PART_BLOCK_LIST);
+	if (sec)
+	{
+		ITEMITR itr = sec->getItemItr();
+		for (; !sec->isItemItrEnd(itr); itr++)
+		{
+			tileManager->addTextPartBlock(itr->getValue());
+		}
+	}
+
+	sec = iniHandler->getSection(SECNAME_CLASS_PART_BLOCK_LIST);
+	if (sec)
+	{
+		ITEMITR itr = sec->getItemItr();
+		for (; !sec->isItemItrEnd(itr); itr++)
+		{
+			tileManager->addClassPartBlock(itr->getValue());
+		}
+	}
+
+	sec = iniHandler->getSection(SECNAME_BOTH_BLOCK_LIST);
+	if (sec)
+	{
+		ITEMITR itr = sec->getItemItr();
+		for (; !sec->isItemItrEnd(itr); itr++)
+		{
+			// key: classname;  value: name
+			tileManager->addBothBlock(itr->getKey(), itr->getValue());
+		}
+	}
+
 }
 
 void tileAddHwndBlock(HWND hwnd)
@@ -919,6 +954,13 @@ void tileAddTextBlock(string text)
 	tileManager->addTextBlock(text);
 	iniHandler->addItem(SECNAME_TEXT_BLOCK_LIST, "none", text);
 	iniHandler->overwiteFile(INI_FILE_NAME);
+}
+
+void tileAddBothBlock(string classname, string text)
+{
+	tileManager->addBothBlock(classname, text);
+	 iniHandler->addItem(SECNAME_BOTH_BLOCK_LIST, classname, text);
+	 iniHandler->overwiteFile(INI_FILE_NAME);
 }
 
 void enableTiling()

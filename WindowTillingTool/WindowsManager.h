@@ -9,7 +9,7 @@ using namespace std;
 
 #pragma comment(lib, "dwmapi.lib")
 
-#define IGNORE_WND_CLASS_MAX_LEN 100
+#define IGNORE_WND_CLASS_MAX_LEN 256
 
 
 class CWindow {

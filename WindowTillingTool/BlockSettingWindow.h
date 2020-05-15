@@ -27,6 +27,10 @@
 #define BLOCK_CALLBACK_TEXT		2
 #define BLOCK_CALLBACK_HWND		3
 
+// wparam: class, lparam: text
+#define WM_BLOCK_BOTH_CALLBACK WM_USER+4
+
+
 
 int registerBlkWndClass(HINSTANCE hInstance);
 HWND createBlkSetWnd(HINSTANCE hinstance, HWND hparent);

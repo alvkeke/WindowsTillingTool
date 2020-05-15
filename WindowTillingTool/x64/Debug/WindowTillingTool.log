@@ -1,5 +1,12 @@
 ﻿  TileManager.cpp
 C:\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(11348,1): warning C4005: “MF_UNCHECKED”: 宏重定义
 C:\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(10362): message : 参见“MF_UNCHECKED”的前一个定义
-C:\workspace\VS\WindowTillingTool\WindowTillingTool\TileManager.cpp(535,21): warning C4267: “return”: 从“size_t”转换到“int”，可能丢失数据
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\TileManager.cpp(590,21): warning C4267: “return”: 从“size_t”转换到“int”，可能丢失数据
+  main.cpp
+C:\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(11348,1): warning C4005: “MF_UNCHECKED”: 宏重定义
+C:\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(10362): message : 参见“MF_UNCHECKED”的前一个定义
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\main.cpp(201,24): warning C4244: “参数”: 从“DWORD”转换到“BYTE”，可能丢失数据
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\main.cpp(205,24): warning C4244: “参数”: 从“DWORD”转换到“BYTE”，可能丢失数据
+C:\workspace\VS\WindowTillingTool\WindowTillingTool\main.cpp(620,12): warning C4244: “return”: 从“WPARAM”转换到“int”，可能丢失数据
+  正在生成代码...
   WindowTillingTool.vcxproj -> C:\workspace\VS\WindowTillingTool\x64\Debug\WindowTillingTool.exe

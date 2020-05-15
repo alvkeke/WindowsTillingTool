@@ -266,7 +266,11 @@ void INIHandler::addItem(int iSection, INIItem item)
 void INIHandler::addItem(string section, string key, string value)
 {
 	INISection* sec = getSection(section);
-	sec->addItem(key, value);
+	if (!sec) {
+		addSection(section);
+	}
+	sec = getSection(section);
+	if (sec)sec->addItem(key, value);
 }
 
 void INIHandler::addItem(int iSection, string key, string value)

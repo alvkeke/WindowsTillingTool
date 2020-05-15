@@ -62,6 +62,7 @@ void loadConfiguration();
 void tileAddHwndBlock(HWND hwnd);
 void tileAddClassBlock(string classname);
 void tileAddTextBlock(string text);
+void tileAddBothBlock(string classname, string text);
 void enableTiling();
 void disableTiling(); 
 int initHook(HINSTANCE hInstance);

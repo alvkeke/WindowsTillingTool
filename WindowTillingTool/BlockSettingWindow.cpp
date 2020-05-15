@@ -35,16 +35,16 @@ LRESULT CALLBACK BlkSetWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 		//	SendMessage(hwnd, WM_CLOSE, 0, 0);
 		//	break;
 		case ID_BTN_BLOCK_ONCE:
-			SendMessage(hParent, WM_BLOCK_CALLBACK, BLOCK_CALLBACK_HWND, (WPARAM)hwndsave);
+			SendMessage(hParent, WM_BLOCK_CALLBACK, BLOCK_CALLBACK_HWND, (LPARAM)hwndsave);
 			break;
 		case ID_BTN_BLOCK_CLASS:
-			SendMessage(hParent, WM_BLOCK_CALLBACK, BLOCK_CALLBACK_CLASS, (WPARAM)classbuf);
+			SendMessage(hParent, WM_BLOCK_CALLBACK, BLOCK_CALLBACK_CLASS, (LPARAM)classbuf);
 			break;
 		case ID_BTN_BLOCK_TEXT:
-			SendMessage(hParent, WM_BLOCK_CALLBACK, BLOCK_CALLBACK_TEXT, (WPARAM)textbuf);
+			SendMessage(hParent, WM_BLOCK_CALLBACK, BLOCK_CALLBACK_TEXT, (LPARAM)textbuf);
 			break;
 		case ID_BTN_BLOCK_ALL:
-
+			SendMessage(hParent, WM_BLOCK_BOTH_CALLBACK, (WPARAM)classbuf, (LPARAM)textbuf);
 			break;
 		}
 		// 只要按下按钮都会关闭窗口

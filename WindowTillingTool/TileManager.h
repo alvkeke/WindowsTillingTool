@@ -5,7 +5,7 @@
 
 using namespace std;
 
-#define BUFFER_SIZE 100
+#define BUFFER_SIZE 256
 
 #define WINDOW_PADDING_X 10
 #define WINDOW_PADDING_Y 10
@@ -90,6 +90,8 @@ public:
 	void addTextBlock(string text);
 	void addBothBlock(string classname, string text);
 	void addHwndBlock(HWND hwnd);
+	void addClassPartBlock(string classname);
+	void addTextPartBlock(string text);
 
 	void clearAllBlock();
 
@@ -118,6 +120,8 @@ private:
 
 	list<string> mTextBlockList;
 	list<string> mClassBlockList;
+	list<string> mTextPartBlockList;
+	list<string> mClassPartBlockList;
 	list<string> mBothBlockList_Text;
 	list<string> mBothBlockList_Class;
 	list<HWND>	 mHwndBlockList;

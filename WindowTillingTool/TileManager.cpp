@@ -107,11 +107,24 @@ void TileManager::addHwndBlock(HWND hwnd)
 	mHwndBlockList.push_back(hwnd);
 }
 
+void TileManager::addClassPartBlock(string classname)
+{
+	mClassPartBlockList.push_back(classname);
+}
+
+void TileManager::addTextPartBlock(string text)
+{
+	mTextPartBlockList.push_back(text);
+}
+
 void TileManager::clearAllBlock()
 {
 	mClassBlockList.clear();
 	mTextBlockList.clear();
+	mClassPartBlockList.clear();
+	mTextPartBlockList.clear();
 	mBothBlockList_Text.clear();
+	mBothBlockList_Class.clear();
 	mHwndBlockList.clear();
 }
 
@@ -134,6 +147,16 @@ bool TileManager::checkBlock(CWINITR itr)
 
 	itr->getClassName(buffer, BUFFER_SIZE);
 	sclass = buffer;
+	if (!mClassPartBlockList.empty())
+	{
+		for (itrblock = mClassPartBlockList.begin(); itrblock != mClassPartBlockList.end(); itrblock++)
+		{
+			if (!itrblock->empty() && sclass.find(*itrblock) != string::npos)
+			{
+				return true;
+			}
+		}
+	}
 	for (itrblock = mClassBlockList.begin(); itrblock != mClassBlockList.end(); itrblock++)
 	{
 		if (sclass == *itrblock)
@@ -144,6 +167,16 @@ bool TileManager::checkBlock(CWINITR itr)
 
 	itr->getText(buffer, BUFFER_SIZE);
 	stext = buffer;
+	if (!mTextPartBlockList.empty())
+	{
+		for (itrblock = mTextPartBlockList.begin(); itrblock != mTextPartBlockList.end(); itrblock++)
+		{
+			if (!itrblock->empty() && stext.find(*itrblock) != string::npos)
+			{
+				return true;
+			}
+		}
+	}
 	for (itrblock = mTextBlockList.begin(); itrblock != mTextBlockList.end(); itrblock++)
 	{
 		if (stext == *itrblock)
@@ -151,6 +184,28 @@ bool TileManager::checkBlock(CWINITR itr)
 			return true;
 		}
 	}
+
+	if (mBothBlockList_Class.size() != mBothBlockList_Text.size())
+	{
+		MessageBox(mHwndMain, "部分屏蔽数据出错，如需重新启用，请重新加载配置文件。", "错误", MB_ICONWARNING);
+		mBothBlockList_Class.clear();
+		mBothBlockList_Text.clear();
+		return false;
+	}
+
+	list<string>::iterator itrtext = mBothBlockList_Text.begin();
+	itrblock = mBothBlockList_Class.begin();
+	for (; itrblock != mBothBlockList_Class.end(); itrblock++)
+	{
+		if (itrtext == mBothBlockList_Text.end()) break;
+
+		if (sclass == *itrblock && stext == *itrtext)
+		{
+			return true;
+		}
+		itrtext++;
+	}
+	
 
 	return false;
 }
